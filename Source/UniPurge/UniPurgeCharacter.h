@@ -30,12 +30,21 @@ public:
 	/* Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	float BaseLookUpRate;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+	/* Modifier applied whenever the character is running */
+	float SprintModifier;
+
+	UPROPERTY(VisibleAnywhere, Category = Movement)
 	/* Boolean indicating if the character is currently hiding*/
 	bool IsHiding;
-
-private:
+	UPROPERTY(VisibleAnywhere, Category=Movement)
 	/* Boolean indicating if the character is running */
 	bool IsRunning;
+
+private:
+	
+	FVector CollisionNormal;
+	bool escalando;
 
 protected:
 
@@ -77,6 +86,9 @@ protected:
 
 	/* Called via input to indicate to toggle the Menu	*/
 	void Menu();
+
+	UFUNCTION(BlueprintCallable)
+		void OnCollisionEnter(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	// TODO: Add Wall Climbing
 	// TODO: Add Swimming
