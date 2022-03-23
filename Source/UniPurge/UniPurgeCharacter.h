@@ -34,6 +34,10 @@ public:
 	/* Modifier applied whenever the character is running */
 	float SprintModifier;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+	/* Modifier applied whenever the character is climbing */
+	float ClimbModifier;
+
 	UPROPERTY(VisibleAnywhere, Category = Movement)
 	/* Boolean indicating if the character is currently hiding*/
 	bool IsHiding;
@@ -44,7 +48,9 @@ public:
 private:
 	
 	FVector CollisionNormal;
-	bool escalando;
+	bool IsClimbing;
+	FVector HeadArea;
+	FVector FeetArea;
 
 protected:
 
@@ -87,11 +93,38 @@ protected:
 	/* Called via input to indicate to toggle the Menu	*/
 	void Menu();
 
-	UFUNCTION(BlueprintCallable)
-		void OnCollisionEnter(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	/**
+	 * Called when moving while climbing. Returns direction of movement
+	 * @param DirectionOfMovement : Indicates the desired movement result
+	 * @param Right : Indicates if the movement is done to the right or not (Using float of movement), currently only used when movement is verified as horizontal
+	 */
+	FVector WallMovement(FVector DirectionOfMovement, bool Right);
+
+	/**
+	 * Called to check if there is a colliding wall at a certain position
+	 * @param StartingPoint : Indicates the starting point of the wall collision check
+	*/
+	bool CheckWallAtPos(FVector StartingPoint);
+
+	/**
+	 * Called when reaching exterior border of a wall
+	 * @param StartingPoint : Indicates the starting point of the wall collision check
+	 * @param Right : Indicates if the movement is done to the right
+	*/
+
+	bool CheckWallAtAngles(FVector StartingPoint, bool Right);
+
+	/* Called to start vaulting. Returns the desired position / movement */
+	FVector VaultOverWall();
+
+	/* Called to stop climbing */
+	void StopClimbing();
 
 	// TODO: Add Wall Climbing
 	// TODO: Add Swimming
+
+	UFUNCTION(BlueprintCallable)
+		void OnCollisionEnter(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 protected:
 	// APawn interface

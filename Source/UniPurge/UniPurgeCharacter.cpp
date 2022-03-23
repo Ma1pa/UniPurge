@@ -9,6 +9,8 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 
+#include "DrawDebugHelpers.h"
+
 #define PrintString(String) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::White, String)
 
 //////////////////////////////////////////////////////////////////////////
@@ -25,6 +27,7 @@ AUniPurgeCharacter::AUniPurgeCharacter()
 
 	// set our defauls modifier values
 	SprintModifier = 2.0f;
+	ClimbModifier = 0.3f;
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -55,8 +58,10 @@ AUniPurgeCharacter::AUniPurgeCharacter()
 
 	//Other Variables
 	IsRunning = false;
-	escalando = false;
+	IsClimbing = false;
 	CollisionNormal = FVector::ZeroVector;
+	HeadArea = FVector(0, 0, 70);
+	FeetArea = FVector(0, 0, -100);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -115,16 +120,15 @@ void AUniPurgeCharacter::MoveForward(float Value)
 
 		// get forward vector
 		FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		if (escalando)
-		{
-			Direction = FRotationMatrix(CollisionNormal.Rotation()).TransformVector(FVector::UpVector);
-		}		
+		if (IsClimbing)
+			Direction = WallMovement(FVector::UpVector, false);
 
 		//Calculate modifications to speed
 		if (IsRunning)	ModifiedValue *= SprintModifier;
 		//if (IsHiding)	ModifiedValue *= HidingModifier;
 
 		AddMovementInput(Direction, ModifiedValue);
+
 	}
 }
 
@@ -140,11 +144,15 @@ void AUniPurgeCharacter::MoveRight(float Value)
 	
 		// get right vector 
 		FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		if (escalando)
-			Direction = FRotationMatrix(CollisionNormal.Rotation()).TransformVector(-FVector::RightVector);
+		if (IsClimbing)
+		{
+			Direction = WallMovement(-FVector::RightVector, ModifiedValue >= 0);
+			ModifiedValue *= ClimbModifier;
+		}
+			
 
 		//Calculate modifications to speed
-		if (IsRunning)	ModifiedValue *= SprintModifier;
+		if (IsRunning && !IsClimbing)	ModifiedValue *= SprintModifier;
 		//if (IsHiding)	ModifiedValue *= HidingModifier;
 
 		// add movement in that direction
@@ -192,23 +200,102 @@ void AUniPurgeCharacter::Menu()
 	// TODO: If the InGame Menu is open, Close the Menu
 }
 
+FVector AUniPurgeCharacter::WallMovement(FVector DirectionOfMovement, bool Right)
+{
+	//Check if theres a wall at head height
+	if (!CheckWallAtPos(HeadArea))
+	{
+		PrintString("Parte de arriba descolgada.");
+		//Check if there is a wall at feet height
+		if (!CheckWallAtPos(FeetArea))
+		{
+			PrintString("Cuerpo flotando");
+			//TODO Turn on the outside of the wall
+			//We check all degrees until something is found 
+
+			if (!CheckWallAtAngles(FeetArea, Right))
+				StopClimbing();
+			
+		}
+		VaultOverWall();
+	}
+	return FRotationMatrix(CollisionNormal.Rotation()).TransformVector(DirectionOfMovement);
+}
+
+bool AUniPurgeCharacter::CheckWallAtPos(FVector StartingPoint)
+{
+	FHitResult Hit;
+	FRotator Rot = CollisionNormal.Rotation();
+
+	FVector Start = GetActorLocation() + StartingPoint;
+	FVector End = Start + Rot.Vector() * -150;
+
+	FCollisionQueryParams TraceParams;
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
+	return GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, TraceParams);
+	return false;
+}
+
+bool AUniPurgeCharacter::CheckWallAtAngles(FVector StartingPoint, bool Right)
+{
+	FHitResult Hit;
+	FRotator Rot = CollisionNormal.Rotation();
+	float Yaw = 90;
+	float InitialYaw = Rot.Yaw;
+
+	FVector Start = GetActorLocation() + StartingPoint + Rot.Vector() * -10;
+	FVector End = Start + Rot.Vector() * -60;
+	FCollisionQueryParams TraceParams;
+	
+
+	while (!GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, TraceParams) && Yaw > -90)
+	{
+		Yaw--;
+		if (Right)
+			Rot.Yaw = InitialYaw + Yaw;
+		else
+			Rot.Yaw = InitialYaw - Yaw;
+		End = Start + Rot.Vector() * -100;
+		DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 2.0f);
+		
+	}
+	if (Yaw > -90)
+	{ 
+		CollisionNormal = Hit.Normal;
+		return true;
+	}
+		
+	else
+		return false;
+}
+
+FVector AUniPurgeCharacter::VaultOverWall()
+{
+	return FVector::ZeroVector;
+}
+
 void AUniPurgeCharacter::OnCollisionEnter(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector ObjectNormal, const FHitResult& Hit)
 {
 	if( GetCharacterMovement()->MovementMode != MOVE_Walking && ( abs(ObjectNormal.X) > abs(ObjectNormal.Z) || abs(ObjectNormal.Y) > abs(ObjectNormal.Z)))
 	{
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 		CollisionNormal = ObjectNormal;
-		escalando = true;
+		IsClimbing = true;
 		PrintString(FString::Printf(TEXT("Hit: %s"), *OtherActor->GetName()));
+		SetActorRotation(FQuat::MakeFromEuler(FVector(-CollisionNormal.X, -CollisionNormal.Y, -CollisionNormal.Z)));
 
 	}
-	else if(escalando)
+	else if(IsClimbing)
 	{
-		escalando = false;
-		PrintString(FString::Printf(TEXT("Tocando: %s"), *OtherActor->GetName()));
-		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
-		SetActorRotation(FQuat::Identity);
+		StopClimbing();
 	}
 	
+}
+
+void AUniPurgeCharacter::StopClimbing()
+{ 
+	IsClimbing = false;
+	GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	SetActorRotation(FQuat::Identity);
 }
 
