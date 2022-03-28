@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+
 #include "UniPurgeCharacter.generated.h"
 
 UCLASS(config=Game)

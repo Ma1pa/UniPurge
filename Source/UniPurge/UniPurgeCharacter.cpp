@@ -149,7 +149,6 @@ void AUniPurgeCharacter::MoveRight(float Value)
 			Direction = WallMovement(-FVector::RightVector, ModifiedValue >= 0);
 			ModifiedValue *= ClimbModifier;
 		}
-			
 
 		//Calculate modifications to speed
 		if (IsRunning && !IsClimbing)	ModifiedValue *= SprintModifier;
