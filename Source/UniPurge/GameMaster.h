@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "UniPurge/WorldGenerator.h"
+#include "UniPurge/Enums.h"
 
 #include "GameMaster.generated.h"
 
@@ -18,7 +19,10 @@ public:
 	// Sets default values for this actor's properties
 	AGameMaster();
 	UPROPERTY(EditAnywhere)
-	UStaticMeshComponent* StaticMesh;
+		UStaticMeshComponent* StaticMesh;
+
+private:
+	const int GridToCoordMult = 800;
 
 protected:
 	// Called when the game starts or when spawned
@@ -29,5 +33,8 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Spawning")
+	void SpawnActor(Block ChosenRoad, int XPosition, int YPosition);
 
 };

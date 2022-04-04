@@ -18,7 +18,22 @@ AGameMaster::AGameMaster()
 void AGameMaster::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	SpawnActor(Block::ROAD_N, 1 * GridToCoordMult, 1 * GridToCoordMult);
+	SpawnActor(Block::ROAD_S, 1 * GridToCoordMult, 2 * GridToCoordMult);
+	SpawnActor(Block::ROAD_E, 1 * GridToCoordMult, 3 * GridToCoordMult);
+	SpawnActor(Block::ROAD_W, 1 * GridToCoordMult, 4 * GridToCoordMult);
+	SpawnActor(Block::ROAD_N_S, 1 * GridToCoordMult, 5 * GridToCoordMult);
+	SpawnActor(Block::ROAD_N_E, 1 * GridToCoordMult, 6 * GridToCoordMult);
+	SpawnActor(Block::ROAD_N_W, 1 * GridToCoordMult, 7 * GridToCoordMult);
+	SpawnActor(Block::ROAD_S_E, 1 * GridToCoordMult, 8 * GridToCoordMult);
+	SpawnActor(Block::ROAD_S_W, 1 * GridToCoordMult, 9 * GridToCoordMult);
+	SpawnActor(Block::ROAD_E_W, 1 * GridToCoordMult, 10 * GridToCoordMult);
+	SpawnActor(Block::ROAD_N_S_E, 1 * GridToCoordMult, 11 * GridToCoordMult);
+	SpawnActor(Block::ROAD_N_S_W, 1 * GridToCoordMult, 12 * GridToCoordMult);
+	SpawnActor(Block::ROAD_N_E_W, 1 * GridToCoordMult, 13 * GridToCoordMult);
+	SpawnActor(Block::ROAD_S_E_W, 1 * GridToCoordMult, 14 * GridToCoordMult);
+	SpawnActor(Block::ROAD_N_S_E_W, 1 * GridToCoordMult, 15 * GridToCoordMult);
 }
 
 // Called every frame
@@ -27,4 +42,6 @@ void AGameMaster::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
+
+void AGameMaster::SpawnActor_Implementation(Block ChosenRoad, int XPosition, int YPosition) {}
 
