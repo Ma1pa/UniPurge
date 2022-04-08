@@ -21,6 +21,13 @@ public:
 	UPROPERTY(EditAnywhere)
 		UStaticMeshComponent* StaticMesh;
 
+	UPROPERTY(EditAnywhere)
+		/* Width of the desired grid */
+		int Width = 10;
+	UPROPERTY(EditAnywhere)
+		/* Height of the desired grid */
+		int Height = 10;
+
 private:
 	const int GridToCoordMult = 800;
 

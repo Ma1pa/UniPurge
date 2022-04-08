@@ -10,7 +10,7 @@ AGameMaster::AGameMaster()
 	PrimaryActorTick.bCanEverTick = true;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
 	RootComponent = StaticMesh;
-	Generator = WorldGenerator(1, 10, 10, 2);
+	Generator = WorldGenerator(1, Height, Width, 2);
 }
 
 // Called when the game starts or when spawned
@@ -18,7 +18,7 @@ void AGameMaster::BeginPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Inicio Juego"));
 	(&Generator)->~WorldGenerator();   //call the destructor explicitly
-	new (&Generator) WorldGenerator(1, 10, 10, 2);
+	new (&Generator) WorldGenerator(1, Height, Width, 2);
 	Super::BeginPlay();
 	StartGeneration();
 
@@ -41,11 +41,11 @@ void AGameMaster::BeginPlay()
 
 void AGameMaster::StartGeneration()
 {
-	for (int i = 0; i < 10 * 10; i++) 
+	for (int i = 0; i < Height * Width; i++) 
 	{
 		std::pair<int, int> Point = Generator.GetMostInfluenced();
 		UE_LOG(LogTemp, Warning, TEXT("Position (%d, %d)"), Point.first, Point.second);
-		Block objeto = StaticCast<Block>((std::rand() % 16) + 1);
+		Block objeto = StaticCast<Block>((std::rand() % 15) + 1);
 		SpawnActor(objeto, Point.first * GridToCoordMult, Point.second * GridToCoordMult);
 		Generator.AddItem(Point.first, Point.second, objeto);
 	}
