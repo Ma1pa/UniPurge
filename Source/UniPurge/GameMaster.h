@@ -30,6 +30,8 @@ protected:
 
 	WorldGenerator Generator;
 
+	void StartGeneration();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
