@@ -3,9 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UniPurge/Enums.h"
 #include "GameFramework/Actor.h"
 #include "UniPurge/WorldGenerator.h"
-#include "UniPurge/Enums.h"
+#include <algorithm>
+#include <iterator>
+
 
 #include "GameMaster.generated.h"
 
@@ -38,6 +41,10 @@ protected:
 	WorldGenerator Generator;
 
 	void StartGeneration();
+
+	Block ChooseBlock(int X, int Y);
+
+	Block BuildOther(int X, int Y);
 
 public:	
 	// Called every frame

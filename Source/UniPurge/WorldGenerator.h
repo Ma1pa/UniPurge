@@ -46,6 +46,9 @@ public:
 	*/
 	void AddItem(int X, int Y, Block UsedTile);
 
+	int GetInfluence(int X, int Y);
+	Block GetBlock(int X, int Y);
+
 protected:
 	/* Tile map used to guide generation */
 	std::vector<Tile> TileMap;

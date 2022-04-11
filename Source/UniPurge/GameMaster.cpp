@@ -21,22 +21,6 @@ void AGameMaster::BeginPlay()
 	new (&Generator) WorldGenerator(1, Height, Width, 2);
 	Super::BeginPlay();
 	StartGeneration();
-
-	//SpawnActor(Block::ROAD_N, 1 * GridToCoordMult, 1 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_S, 1 * GridToCoordMult, 2 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_E, 1 * GridToCoordMult, 3 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_W, 1 * GridToCoordMult, 4 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_S, 1 * GridToCoordMult, 5 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_E, 1 * GridToCoordMult, 6 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_W, 1 * GridToCoordMult, 7 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_S_E, 1 * GridToCoordMult, 8 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_S_W, 1 * GridToCoordMult, 9 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_E_W, 1 * GridToCoordMult, 10 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_S_E, 1 * GridToCoordMult, 11 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_S_W, 1 * GridToCoordMult, 12 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_E_W, 1 * GridToCoordMult, 13 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_S_E_W, 1 * GridToCoordMult, 14 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_S_E_W, 1 * GridToCoordMult, 15 * GridToCoordMult);
 }
 
 void AGameMaster::StartGeneration()
@@ -45,10 +29,114 @@ void AGameMaster::StartGeneration()
 	{
 		std::pair<int, int> Point = Generator.GetMostInfluenced();
 		UE_LOG(LogTemp, Warning, TEXT("Position (%d, %d)"), Point.first, Point.second);
-		Block objeto = StaticCast<Block>((std::rand() % 15) + 1);
+		Block objeto = ChooseBlock(Point.first, Point.second);
 		SpawnActor(objeto, Point.first * GridToCoordMult, Point.second * GridToCoordMult);
 		Generator.AddItem(Point.first, Point.second, objeto);
 	}
+}
+
+Block AGameMaster::ChooseBlock(int X, int Y)
+{
+	//Take into account previous blocks
+	// +X == Oeste
+	// -X == Este
+	// +Y == Norte
+	// -Y == Sur
+	bool Directions[4] = { false };
+	//If the element in the south has a north exit
+	Directions[1] = (std::find(std::begin(NorthExits), std::end(NorthExits), Generator.GetBlock(X, Y - 1)) != std::end(NorthExits));
+	Directions[0] = (std::find(std::begin(SouthExits), std::end(SouthExits), Generator.GetBlock(X, Y + 1)) != std::end(SouthExits));
+	Directions[3] = (std::find(std::begin(EastExits), std::end(EastExits), Generator.GetBlock(X + 1, Y)) != std::end(EastExits));
+	Directions[2] = (std::find(std::begin(WestExits), std::end(WestExits), Generator.GetBlock(X - 1, Y)) != std::end(WestExits));
+
+	Block finalBlock = Block::EMPTY;
+
+	if (std::find(std::begin(Directions), std::end(Directions), false))
+		finalBlock = BuildOther(X, Y);
+
+	if (finalBlock == Block::EMPTY) {
+		std::array<Block, 8> initial = { Block::EMPTY };
+		std::array<Block, 8> final = { Block::EMPTY };
+		std::vector<Block> commonElements;
+		std::vector<Block> finalElements;
+		for (int i = 0; i < 4; i++)
+		{
+			if (Directions[i])
+			{
+				switch (i)
+				{
+				case 0:
+					//Only 1 possible
+					initial = NorthExits;
+					break;
+				case 1:
+					//Only 2 possible
+					if (initial[0] != Block::EMPTY)
+						std::set_intersection(std::begin(initial), std::end(initial)
+							, std::begin(SouthExits), std::end(SouthExits)
+							, std::back_inserter(commonElements));
+					else
+						initial = SouthExits;
+					break;
+				case 2:
+					if (commonElements.empty()) {
+						//Not third element
+						if (initial[0] != Block::EMPTY)
+							std::set_intersection(std::begin(initial), std::end(initial)
+								, std::begin(EastExits), std::end(EastExits)
+								, std::back_inserter(commonElements));
+						else
+							initial = EastExits;
+					}
+					else
+					{
+						//Third element
+						std::set_intersection(std::begin(commonElements), std::end(commonElements)
+							, std::begin(EastExits), std::end(EastExits)
+							, std::back_inserter(finalElements));
+					}
+					break;
+				case 3:
+					if (finalElements.empty()) {
+						//Not forth element
+						if (commonElements.empty()) {
+							//Not third element
+							if (initial[0] != Block::EMPTY)
+								std::set_intersection(std::begin(initial), std::end(initial)
+									, std::begin(WestExits), std::end(WestExits)
+									, std::back_inserter(commonElements));
+							else
+								initial = WestExits;
+						}
+						else
+						{
+							//Third element
+							std::set_intersection(std::begin(commonElements), std::end(commonElements)
+								, std::begin(WestExits), std::end(WestExits)
+								, std::back_inserter(finalElements));
+						}
+					}
+					else return Block::ROAD_N_S_E_W;
+					break;
+				}
+			}
+		}
+		if (commonElements.empty())	commonElements.insert(commonElements.begin(), std::begin(initial), std::end(initial));
+		if (finalElements.empty() || finalElements.size() == 0)	finalElements = commonElements;
+		finalBlock = finalElements[std::rand() % finalElements.size()];
+	}
+	return finalBlock;
+}
+
+Block AGameMaster::BuildOther(int X, int Y)
+{
+	//Choose one option at random
+	int value = Generator.GetInfluence(X, Y);
+	value = (value > 100) ? 100 : value;
+	UE_LOG(LogTemp, Warning, TEXT("Placing at (%d, %d). Value = %d"), X, Y, value);
+	if (std::rand() % 100 >= value || (X == 0 && Y == 0))
+		return Block::EMPTY;
+	return StaticCast < Block>(16);
 }
 
 // Called every frame
