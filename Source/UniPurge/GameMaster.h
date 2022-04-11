@@ -44,6 +44,8 @@ protected:
 
 	Block ChooseBlock(int X, int Y);
 
+	std::vector<int> ReduceOptions(const bool options[4], std::vector<int> currentOptions);
+
 	Block BuildOther(int X, int Y);
 
 public:	

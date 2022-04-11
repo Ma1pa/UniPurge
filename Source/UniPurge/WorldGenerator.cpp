@@ -246,7 +246,8 @@ int WorldGenerator::GetInfluence(int X, int Y)
 
 Block WorldGenerator::GetBlock(int X, int Y)
 {
-	return TileMap[get_1d(X, Y)->Location].block;
+	if (X < 0 || Y < 0 || (X + Width * Y) >= (Width * Height))	return Block::EMPTY;
+	return get_1d(X, Y)->block;
 }
 
 Tile* WorldGenerator::get_1d(int Columna, int Fila)	{ return & TileMap[Fila + Width * Columna] ; }
