@@ -13,8 +13,16 @@ class UNIPURGE_API WorldGenerator
 {
 public:
 	
-	WorldGenerator(int S, int H, int W, int MR);
+	/**
+	* Main constructor of the class, used to initialize properly
+	* @param H : The height of the grid
+	* @param W : The width of the grid
+	* @param MR : The maximum range of influence
+	*/
+	WorldGenerator( int H, int W, int MR);
+	/* Empty constructor to simply generate the class*/
 	WorldGenerator();
+	/* Class destructor*/
 	~WorldGenerator();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = GenerationOptions)
@@ -23,9 +31,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = GenerationOptions)
 		/* Width of the world generated (2D) */
 		int Width;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = GenerationOptions)
-		/* Seed to use in the random generation */
-		int Seed;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = GenerationOptions)
 		/* Maximum influence range */
 		int MaxRange;
@@ -41,12 +46,23 @@ public:
 
 	/**
 	* Function called whenever an element is added to the grid. Used to recalculate the map
-	* @param X : The X position in the grid ->
-	* @param Y : The Y position in the grid ^
+	* @param X : The X position in the grid
+	* @param Y : The Y position in the grid
 	*/
 	void AddItem(int X, int Y, Block UsedTile);
 
+	/**
+	* Function called to get the influence of a certain point in the grid
+	* @param X : The X position in the grid
+	* @param Y : The Y position in the grid
+	*/
 	int GetInfluence(int X, int Y);
+
+	/**
+	* Public function used to receive the block in a certain location
+	* @param X : The X position in the grid
+	* @param Y : The Y position in the grid
+	*/
 	Block GetBlock(int X, int Y);
 
 protected:
@@ -65,7 +81,7 @@ private:
 	* @param Pos : The position of the road in the grid
 	* @param VisitedList : The list which has all the visited positions in the grid
 	*/
-	void RecalculateRoad(int Pos, std::vector<int>* VisitedList);
+	void RecalculateRoad(int Pos, int InfluenceGain, std::vector<int>* VisitedList);
 
 	/**
 	* Recursive function called by "RecalculateRoad" and used to recalculate the influence in a certain nothing spot
@@ -74,21 +90,6 @@ private:
 	* @param RemainingRange : The remaining range for the recursion
 	*/
 	void RecalculateNext(int Pos, int InfluenceGain, int RemainingRange, std::vector<int>* VisitedList);
-
-	/**
-	* Function used to update the influence in a certain road
-	* @param Pos : The position of the road in the grid
-	* @param InfluenceGain : The influence that the road gains
-	*/
-	void UpdateRoad(int Pos, int InfluenceGain, std::vector<int>* VisitedList);
-
-	/**
-	* Recursive function called by "UpdateRoad" and used to recalculate the influence in a certain nothing spot
-	* @param Pos : The position of the road in the grid
-	* @param InfluenceGain : The gain of influence to the road
-	* @param RemainingRange : The remaining range for the recursion
-	*/
-	void UpdateNext(int Pos, int InfluenceGain, int RemainingRange, std::vector<int>* VisitedList);
 
 	/**
 	* Recursive function called by "AddItem" and used to find all roads inside its influence area

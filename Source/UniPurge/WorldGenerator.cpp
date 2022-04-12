@@ -4,23 +4,21 @@
 #include "WorldGenerator.h"
 
 WorldGenerator::WorldGenerator(){};
-WorldGenerator::WorldGenerator(int S, int H, int W, int MR)
+WorldGenerator::WorldGenerator( int H, int W, int MR)
 {
-	//TODO Obtener todos los bojetos que se pueden generar
-
 	Height = H;
 	Width = W;
-	Seed = S;
 	MaxRange = MR;
 	BuildingInfluence = 1;
 	for (int i = 0; i < Width * Height; i++) 
 	{
 		TileMap.push_back(Tile());
 		TileMap[i].Location = i;
+		TileMap[i].block = Block::EMPTY;
+		TileMap[i].Influence = 0;
 	}
-	//TileMap[0].Influence = 1;
-	//Add point 0,0 to the influence list to check at the beginning
-	InfluenceList.insert({ TileMap[0].Influence, &TileMap[0] });
+	//Add point in the middle to the influence list to check at the beginning
+	InfluenceList.insert({ TileMap[(Height * Width) / 2].Influence, &TileMap[(Height * Width) / 2] });
 
 	iterator = 0;
 	
@@ -34,22 +32,18 @@ std::pair<int, int> WorldGenerator::GetMostInfluenced()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Iteración numero %d"), ++iterator);
 	//Check if list is empty
-	if(InfluenceList.empty())
+	if (InfluenceList.empty())
 	{
 		//If it is empty, we then check all tiles up until an Empty tile shows up
 		FixList();
-		//If it passes the for, then there is nothing else to place
-		return std::pair<int, int>{-1, -1};
+		if (InfluenceList.empty()) 
+		{
+			//If it passes the for, then there is nothing else to place
+			return std::pair<int, int>{-1, -1};
+		}
 	}
-	//Check if the block has something, If it does, remove it from the dic and check the next
+	//Remove the selected tile from the list and return the position
 	Tile* SelectedTile = prev(InfluenceList.end())->second;
-	//while(SelectedTile->block != Block::EMPTY)
-	//{
-	//	InfluenceList.erase(prev(InfluenceList.end()));
-	//	if (InfluenceList.empty())
-	//		FixList();
-	//	SelectedTile = prev(InfluenceList.end())->second;
-	//}
 	std::pair<int, int> valor = get_2d(SelectedTile->Location);
 	InfluenceList.erase(prev(InfluenceList.end()));
 	return valor;
@@ -59,9 +53,11 @@ void WorldGenerator::FixList()
 {
 	for (int i = 0; i < TileMap.size(); i++)
 	{
-		if (TileMap[i].block == Block::EMPTY)
+		if (TileMap[i].block == Block::EMPTY) 
+		{
 			InfluenceList.insert({ TileMap[i].Influence, &TileMap[i] });
-		break;
+			return;
+		}
 	}
 }
 
@@ -75,40 +71,37 @@ void WorldGenerator::AddItem(int X, int Y, Block UsedTile)
 		throw std::invalid_argument("You attempted to place nothing");
 		return;
 	}
+	//It is road
 	else if(UsedTile <= Block::ROAD_N_S_E_W)
 	{
 		//Vector with variable length used to know whether a point has been visited
 		std::vector<int> visited;
-		//It is road
 		//We recalculate all the influence in empty spots with the influence the road has
-		RecalculateRoad(get_1d(X, Y)->Location, &visited);
+		RecalculateRoad(get_1d(X, Y)->Location, 0, &visited);
 	}
 	else 
 	{
 		//Vector with variable length used to know whether a point has been visited
 		std::vector<int> visited;
 		//We recalculate all influence in all the close roads
-		CheckRoads(get_1d(X, Y)->Location, BuildingInfluence, 1,  &visited);
+		CheckRoads(get_1d(X, Y)->Location, BuildingInfluence, MaxRange,  &visited);
 	}
-	
-	//TODO Recalculate all influence from Roads
 }
 
 
-void WorldGenerator::RecalculateRoad(int Pos, std::vector<int>* VisitedList)
+void WorldGenerator::RecalculateRoad(int Pos, int InfluenceGain, std::vector<int>* VisitedList)
 {
-	//Cleansing the visited list
-	VisitedList->clear();
+	//Add the current point in the VisitedList
 	VisitedList->push_back(Pos);
 
-	int Influence = TileMap[Pos].Influence;
-	//If we're building a road and the road influence is 0; set the influence to 1
-	if (Influence == 0) 
-	{
-		Influence = 1;
-		TileMap[Pos].Influence = 1;
-	}
-	//TileMap[Pos].Influence = 0;
+	TileMap[Pos].Influence += InfluenceGain;
+	int Influence = (InfluenceGain == 0)? TileMap[Pos].Influence : InfluenceGain;
+	////If we're building a road and the road influence is 0; set the influence to 1
+	//if (Influence == 0) 
+	//{
+	//	Influence = 1;
+	//	TileMap[Pos].Influence = 1;
+	//}
 	//We call recursibly to all the sides, the recursive function will then take all options by itself
 	if ((Pos + 1) % Width != 0)
 		RecalculateNext(Pos + 1, Influence, MaxRange, VisitedList);
@@ -123,90 +116,33 @@ void WorldGenerator::RecalculateRoad(int Pos, std::vector<int>* VisitedList)
 
 void WorldGenerator::RecalculateNext(int Pos, int InfluenceGain, int RemainingRange, std::vector<int>* VisitedList)
 {
-	//Check if we visited already the position
-	if (std::count(VisitedList->begin(), VisitedList->end(), Pos))
-		return;
+	//Check if we already visited the position
+	if (std::count(VisitedList->begin(), VisitedList->end(), Pos) > 0)		return;
+
 	VisitedList->push_back(Pos);
 
-	//If the influence added is 0, stop, since it is the end
-	if (InfluenceGain <= 0)		return;
+	//If no influence is left to distribute or no more range, stop, since it is the end
+	if (InfluenceGain <= 0 || RemainingRange <= 0)		return;
 
 	//Check if the block is not already built
 	if (TileMap[Pos].block == Block::EMPTY)
 	{
 		TileMap[Pos].Influence += InfluenceGain;
-		//If influence was 0
+		//If influence was 0, we add the block into the list; else we replace the influence of the block
 		if (TileMap[Pos].Influence == InfluenceGain)
 			InfluenceList.insert({ InfluenceGain, &TileMap[Pos] });
 		else
 			replace_key(InfluenceList, TileMap[Pos].Influence - InfluenceGain, TileMap[Pos].Influence, &TileMap[Pos]);
 	}
-		
-	if(RemainingRange > 0)
-	{
-		if ((Pos + 1) % Width != 0)
-			RecalculateNext(Pos + 1, InfluenceGain - 1, RemainingRange - 1, VisitedList);
-		if (Pos % Width != 0)
-			RecalculateNext(Pos - 1, InfluenceGain - 1, RemainingRange - 1, VisitedList);
-		if (Pos + Width < TileMap.size())
-			RecalculateNext(Pos + Width, InfluenceGain - 1, RemainingRange - 1, VisitedList);
-		if (Pos - Width >= 0)
-			RecalculateNext(Pos - Width, InfluenceGain - 1, RemainingRange - 1, VisitedList);
-	}
-}
-
-void WorldGenerator::UpdateRoad(int Pos, int InfluenceGain, std::vector<int>* VisitedList)
-{
-	//Cleansing the visited list
-	VisitedList->clear();
-	VisitedList->push_back(Pos);
-
-	TileMap[Pos].Influence += InfluenceGain;
-	//We call recursibly to all the sides, the recursive function will then take all options by itself
+	
 	if ((Pos + 1) % Width != 0)
-		UpdateNext(Pos + 1, std::min(TileMap[Pos].Influence - 1, InfluenceGain), MaxRange, VisitedList);
+		RecalculateNext(Pos + 1, InfluenceGain - 1, RemainingRange - 1, VisitedList);
 	if (Pos % Width != 0)
-		UpdateNext(Pos - 1, std::min(TileMap[Pos].Influence - 1, InfluenceGain), MaxRange, VisitedList);
+		RecalculateNext(Pos - 1, InfluenceGain - 1, RemainingRange - 1, VisitedList);
 	if (Pos + Width < TileMap.size())
-		UpdateNext(Pos + Width, std::min(TileMap[Pos].Influence - 1, InfluenceGain), MaxRange, VisitedList);
+		RecalculateNext(Pos + Width, InfluenceGain - 1, RemainingRange - 1, VisitedList);
 	if (Pos - Width >= 0)
-		UpdateNext(Pos - Width, std::min(TileMap[Pos].Influence - 1, InfluenceGain), MaxRange, VisitedList);
-
-}
-
-void WorldGenerator::UpdateNext(int Pos, int InfluenceGain, int RemainingRange, std::vector<int>* VisitedList)
-{
-	//Check if we visited already the position
-	if (std::count(VisitedList->begin(), VisitedList->end(), Pos))
-		return;
-	VisitedList->push_back(Pos);
-
-	//If the influence added is 0, stop, since it is the end
-	if (InfluenceGain <= 0)		return;
-
-	//Check if the block is not already built
-	if (TileMap[Pos].block == Block::EMPTY)
-	{
-		TileMap[Pos].Influence += InfluenceGain;
-		//If influence was 0
-		if (TileMap[Pos].Influence == InfluenceGain)
-			InfluenceList.insert({ InfluenceGain, &TileMap[Pos] });
-		else
-			replace_key(InfluenceList, TileMap[Pos].Influence - InfluenceGain, TileMap[Pos].Influence, &TileMap[Pos]);
-	}
-
-	//Make the recursion stop if the Max Range is reached
-	if (RemainingRange > 0)
-	{
-		if ((Pos + 1) % Width != 0)
-			UpdateNext(Pos + 1, std::min(TileMap[Pos].Influence -1, InfluenceGain), RemainingRange - 1, VisitedList);
-		if (Pos % Width != 0)
-			UpdateNext(Pos - 1, std::min(TileMap[Pos].Influence - 1, InfluenceGain), RemainingRange - 1, VisitedList);
-		if (Pos + Width < TileMap.size())
-			UpdateNext(Pos + Width, std::min(TileMap[Pos].Influence - 1, InfluenceGain), RemainingRange - 1, VisitedList);
-		if (Pos - Width >= 0)
-			UpdateNext(Pos - Width, std::min(TileMap[Pos].Influence - 1, InfluenceGain), RemainingRange - 1, VisitedList);
-	}
+		RecalculateNext(Pos - Width, InfluenceGain - 1, RemainingRange - 1, VisitedList);
 }
 
 void WorldGenerator::CheckRoads(int Pos, int RemainingInfluence, int RemainingRange, std::vector<int>* VisitedList)
@@ -216,32 +152,29 @@ void WorldGenerator::CheckRoads(int Pos, int RemainingInfluence, int RemainingRa
 		return;
 	VisitedList->push_back(Pos);
 
-	//If the influence remaining is 0, stop, since it is the end
-	if (RemainingInfluence <= 0)		return;
+	//If no influence is left to distribute or no more range, stop, since it is the end
+	if (RemainingInfluence <= 0 || RemainingRange <= 0)		return;
 
 	//Check if the block is a road
 	if (TileMap[Pos].block != Block::EMPTY && TileMap[Pos].block <= Block::ROAD_N_S_E_W)
 	{
 		std::vector<int> visited;
-		UpdateRoad(Pos, RemainingInfluence, &visited);
+		RecalculateRoad(Pos, RemainingInfluence, &visited);
 	}
-	//Make the recursion stop if the Max Range is reached
-	if (RemainingRange > 0)
-	{
-		if ((Pos + 1) % Width != 0)
-			CheckRoads(Pos + 1, RemainingInfluence - 1, RemainingRange - 1, VisitedList);
-		if (Pos % Width != 0)
-			CheckRoads(Pos - 1, RemainingInfluence - 1, RemainingRange - 1, VisitedList);
-		if (Pos + Width < TileMap.size())
-			CheckRoads(Pos + Width, RemainingInfluence - 1, RemainingRange - 1, VisitedList);
-		if (Pos - Width >= 0)
-			CheckRoads(Pos - Width, RemainingInfluence - 1, RemainingRange - 1, VisitedList);
-	}
+	//TODO Maybe remove the loss of ingfluence by distance here?
+	if ((Pos + 1) % Width != 0)
+		CheckRoads(Pos + 1, RemainingInfluence - 1, RemainingRange - 1, VisitedList);
+	if (Pos % Width != 0)
+		CheckRoads(Pos - 1, RemainingInfluence - 1, RemainingRange - 1, VisitedList);
+	if (Pos + Width < TileMap.size())
+		CheckRoads(Pos + Width, RemainingInfluence - 1, RemainingRange - 1, VisitedList);
+	if (Pos - Width >= 0)
+		CheckRoads(Pos - Width, RemainingInfluence - 1, RemainingRange - 1, VisitedList);
 }
 
 int WorldGenerator::GetInfluence(int X, int Y) 
 {
-	return TileMap[get_1d(X, Y)->Location].Influence;
+	return get_1d(X, Y)->Influence;
 }
 
 Block WorldGenerator::GetBlock(int X, int Y)
@@ -252,7 +185,7 @@ Block WorldGenerator::GetBlock(int X, int Y)
 
 Tile* WorldGenerator::get_1d(int Columna, int Fila)	{ return & TileMap[Fila + Width * Columna] ; }
 
-std::pair<int, int> WorldGenerator::get_2d( int Pos){ return { (int)(Pos / Width), Pos % Width}; }
+std::pair<int, int> WorldGenerator::get_2d (int Pos){ return { (int)(Pos / Width), Pos % Width}; }
 
 void WorldGenerator::replace_key(std::multimap <int, Tile*> list, int oldKey, int newKey, Tile* tile)
 {
@@ -260,16 +193,18 @@ void WorldGenerator::replace_key(std::multimap <int, Tile*> list, int oldKey, in
 	switch(list.count(oldKey))
 	{
 	case 0:
+		//No element as such exists in the list
 		return;
 		break;
 	case 1:
+		//Only one element exists in the list
 		punto = list.find(oldKey)->second;
 		list.erase(list.find(oldKey));
 		list.insert({ newKey, punto });
 		break;
 	default:
-		//Hay mas de 1 claves iguales
-		//Busqueda binaria para encontrar elelemento igual
+		//More than one element exists in the list
+		//We do a binary search looking for the correct item
 		auto itr1 = list.lower_bound(oldKey);
 		auto itr2 = list.upper_bound(oldKey);
 		while (itr1 != itr2)
@@ -285,4 +220,5 @@ void WorldGenerator::replace_key(std::multimap <int, Tile*> list, int oldKey, in
 		}
 		break;
 	}
+	return;
 }

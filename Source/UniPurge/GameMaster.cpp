@@ -2,6 +2,7 @@
 
 
 #include "GameMaster.h"
+#include <unordered_set>
 
 // Sets default values
 AGameMaster::AGameMaster()
@@ -10,7 +11,7 @@ AGameMaster::AGameMaster()
 	PrimaryActorTick.bCanEverTick = true;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
 	RootComponent = StaticMesh;
-	Generator = WorldGenerator(1, Height, Width, 2);
+	Generator = WorldGenerator();
 }
 
 // Called when the game starts or when spawned
@@ -18,7 +19,7 @@ void AGameMaster::BeginPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Inicio Juego"));
 	(&Generator)->~WorldGenerator();   //call the destructor explicitly
-	new (&Generator) WorldGenerator(1, Height, Width, 2);
+	new (&Generator) WorldGenerator(Height, Width, 2);
 	Super::BeginPlay();
 	StartGeneration();
 }
@@ -68,12 +69,11 @@ Block AGameMaster::ChooseBlock(int X, int Y)
 		UE_LOG(LogTemp, Warning, TEXT("Conecto con calle"));
 		std::vector<int> limitador;
 
-		limitador = ReduceOptions(Directions, limitador);
+		limitador = ReduceOptions(Directions);
 		//See if we connect to a non generated block
 		if(std::find(std::begin(Empties), std::end(Empties), true) != std::end(Empties))
 		{
-			for (int i = 0; i < 4; i++)	Empties[i] = !Empties[i];
-			limitador = ReduceOptions(Empties, limitador);
+			limitador = LimitOptions(Directions, Empties, limitador);
 		}
 		
 		finalBlock = StaticCast <Block>(limitador[std::rand() % limitador.size()]);
@@ -86,18 +86,20 @@ Block AGameMaster::ChooseBlock(int X, int Y)
 		if(finalBlock == Block::EMPTY)
 		{
 			std::vector<int> limitador;
-			for (int i = 0; i < 4; i++)	Empties[i] = !Empties[i];
-			limitador = ReduceOptions(Empties, limitador);
-			finalBlock = StaticCast<Block>(limitador[std::rand() % limitador.size()]);
+			for (int i = 1; i < (int)Block::BUILDING; i++)
+				limitador.push_back(i);
+			limitador = LimitOptions(Directions, Empties, limitador);
+			if (limitador.size() == 0)	finalBlock = Block::BUILDING;
+			else	finalBlock = StaticCast<Block>(limitador[std::rand() % limitador.size()]);
 		}
 	}
 
 	
-	if (finalBlock == Block::EMPTY)	finalBlock = StaticCast < Block>((std::rand()%15) + 1);
+	//if (finalBlock == Block::EMPTY)	finalBlock = StaticCast < Block>((std::rand()%15) + 1);
 	return finalBlock;
 }
 
-std::vector<int> AGameMaster::ReduceOptions(const bool options[4], const std::vector<int> currentOptions)
+std::vector<int> AGameMaster::ReduceOptions(const bool options[4])
 {
 	std::array<int, 8> initial = { };
 	std::vector<int> commonElements;
@@ -171,13 +173,40 @@ std::vector<int> AGameMaster::ReduceOptions(const bool options[4], const std::ve
 	if (commonElements.empty()) { commonElements.insert(commonElements.begin(), std::begin(initial), std::end(initial)); }
 	if (finalElements.empty())	finalElements = commonElements;
 
-	if(currentOptions.empty())
-		return finalElements;
-	else
-		std::set_intersection(std::begin(currentOptions), std::end(currentOptions)
-			, std::begin(finalElements), std::end(finalElements)
-			, std::back_inserter(finalElements));
 	return finalElements;
+}
+
+std::vector<int> AGameMaster::LimitOptions(const bool options[4], const bool empty[4], const std::vector<int> Initial)
+{
+	std::vector<int> final = Initial;
+	for(int i = 0; i < 4; i++)
+	{
+		//There is something in that location that is not a road
+		if(!(empty[i] || options[i]))
+		{
+			std::array<int, 8> list;
+			switch(i)
+			{
+				case 0: list = NorthExits;
+					break;
+				case 1: list = SouthExits;
+					break;
+				case 2: list = EastExits;
+					break;
+				case 3: list = WestExits;
+					break;
+			}
+			std::vector<int> common;
+			std::set_intersection(final.begin(), final.end(), list.begin(), list.end(),
+				std::inserter(common, common.begin()));
+
+			final.erase(std::set_difference(final.begin(), final.end(),
+				common.begin(), common.end(),
+				final.begin()),
+				final.end());
+		}
+	}
+	return final;
 }
 
 Block AGameMaster::BuildOther(int X, int Y)
@@ -187,7 +216,9 @@ Block AGameMaster::BuildOther(int X, int Y)
 	value = (value > 100) ? 100 : value;
 	UE_LOG(LogTemp, Warning, TEXT("Placing at (%d, %d). Value = %d"), X, Y, value);
 	//Check if we put a road randomly
-	if ( std::rand() % 100 < value || (X == 0 && Y == 0))
+	//We use a sin function which makes a 50% at values 0, 50 100
+	//Link: https://www.desmos.com/calculator/xya9lb4uhi
+	if ( std::rand() % 100 >= (50 + 50 * sin(value/15.9155)))
 		return Block::EMPTY;
 	return StaticCast < Block>(16);
 }
