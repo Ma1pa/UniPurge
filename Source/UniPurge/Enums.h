@@ -2,38 +2,58 @@
 
 #pragma once
 
+#include <vector>
 #include "CoreMinimal.h"
 
 UENUM(BlueprintType)
 enum class Block : uint8
 {
-	EMPTY UMETA(DisplayName = "Empty"),
-	ROAD_N UMETA(DisplayName = "Road North"),
-	ROAD_S UMETA(DisplayName = "Road South"),
-	ROAD_E UMETA(DisplayName = "Road East"),
-	ROAD_W UMETA(DisplayName = "Road West"),
-	ROAD_N_S UMETA(DisplayName = "Road North-South"),
-	ROAD_N_E UMETA(DisplayName = "Road North-East"),
-	ROAD_N_W UMETA(DisplayName = "Road North-West"),
-	ROAD_S_E UMETA(DisplayName = "Road South-East"),
-	ROAD_S_W UMETA(DisplayName = "Road South-West"),
-	ROAD_E_W UMETA(DisplayName = "Road East-West"),
-	ROAD_N_S_E UMETA(DisplayName = "Road North-South-East"),
-	ROAD_N_S_W UMETA(DisplayName = "Road North-South-West"),
-	ROAD_N_E_W UMETA(DisplayName = "Road North-East-West"),
-	ROAD_S_E_W UMETA(DisplayName = "Road South-East-West"),
-	ROAD_N_S_E_W  UMETA(DisplayName = "Road Cross"),
-	BUILDING UMETA(DisplayName = "Building")
+	NOTHING UMETA(DisplayName = "Nothing"),							//0
+	EMPTY UMETA(DisplayName = "Empty"),								//1
+	ROAD_N UMETA(DisplayName = "Road North"),						//2
+	ROAD_S UMETA(DisplayName = "Road South"),						//3
+	ROAD_E UMETA(DisplayName = "Road East"),						//4
+	ROAD_W UMETA(DisplayName = "Road West"),						//5
+	ROAD_N_S UMETA(DisplayName = "Road North-South"),				//6
+	ROAD_N_E UMETA(DisplayName = "Road North-East"),				//7
+	ROAD_N_W UMETA(DisplayName = "Road North-West"),				//8
+	ROAD_S_E UMETA(DisplayName = "Road South-East"),				//9
+	ROAD_S_W UMETA(DisplayName = "Road South-West"),				//10
+	ROAD_E_W UMETA(DisplayName = "Road East-West"),					//11
+	ROAD_N_S_E UMETA(DisplayName = "Road North-South-East"),		//12
+	ROAD_N_S_W UMETA(DisplayName = "Road North-South-West"),		//13
+	ROAD_N_E_W UMETA(DisplayName = "Road North-East-West"),			//14
+	ROAD_S_E_W UMETA(DisplayName = "Road South-East-West"),			//15
+	ROAD_N_S_E_W  UMETA(DisplayName = "Road Cross"),				//16
+	BUILDING UMETA(DisplayName = "Building")						//17
 };
+
+UENUM(BlueprintType)
+enum class Direction : uint8
+{
+	NORTH UMETA(DisplayName = "North"),
+	SOUTH UMETA(DisplayName = "South"),
+	EAST UMETA(DisplayName = "East"),
+	WEST UMETA(DisplayName = "West")
+};
+
+static int AllBlocks[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17};
+static int AllRoads[]{ 1,6,7,8,9,10,11,12,13,14,15,16 };
+static int AllNorth[7]{ 6,7,8,12,13,14,16 };
+static int AllSouth[7]{ 6,9,10,12,13,15,16 };
+static int AllEast[7]{ 7,9,11,12,14,15,16 };
+static int AllWest[7]{ 8,10,11,13,14,15,16 };
 
 struct Tile
 {
 	/* Location of the tile in the array representing the 2D grid*/
 	int Location;
-	/* Influence of the tile in question*/
-	int Influence;
+	/* Current possible blocks in the tile. Its length is the entropy */
+	std::vector<int> posibilities;
 	/* Block currently build in the location*/
 	Block block;
+	/* Group of the tile */
+	int group;
 };
 
 class UNIPURGE_API Enums

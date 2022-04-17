@@ -10,7 +10,7 @@ AGameMaster::AGameMaster()
 	PrimaryActorTick.bCanEverTick = true;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
 	RootComponent = StaticMesh;
-	Generator = WorldGenerator(1, Height, Width, 2);
+	Generator = WorldGenerator(1, Height, Width);
 }
 
 // Called when the game starts or when spawned
@@ -18,7 +18,7 @@ void AGameMaster::BeginPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Inicio Juego"));
 	(&Generator)->~WorldGenerator();   //call the destructor explicitly
-	new (&Generator) WorldGenerator(1, Height, Width, 2);
+	new (&Generator) WorldGenerator(1, Height, Width);
 	Super::BeginPlay();
 	StartGeneration();
 
@@ -43,11 +43,32 @@ void AGameMaster::StartGeneration()
 {
 	for (int i = 0; i < Height * Width; i++) 
 	{
-		std::pair<int, int> Point = Generator.GetMostInfluenced();
+		std::pair<int, int> Point = Generator.GetLessEntropy();
 		UE_LOG(LogTemp, Warning, TEXT("Position (%d, %d)"), Point.first, Point.second);
-		Block objeto = StaticCast<Block>((std::rand() % 15) + 1);
-		SpawnActor(objeto, Point.first * GridToCoordMult, Point.second * GridToCoordMult);
-		Generator.AddItem(Point.first, Point.second, objeto);
+		//We chose if we put empty or not 50%
+		int option = std::rand() % 2;
+		//int option = 0;
+		//Check if an empty is possible
+		if (option == 1 && Generator.CanEmpty(Point.first, Point.second))
+		{
+			Generator.CollapseOptions(Point.first, Point.second, 1);
+		}
+		else
+		{
+			if (Generator.GetPosibilities(Point.first, Point.second) <= 0) 
+			{
+				Generator.CollapseList(Point.first, Point.second, -1); 
+				UE_LOG(LogTemp, Warning, TEXT("No options left"));
+			}
+			else
+			{
+				option = std::rand() % Generator.GetPosibilities(Point.first, Point.second);
+				Generator.CollapseList(Point.first, Point.second, option);
+			}
+		}
+		
+		UE_LOG(LogTemp, Warning, TEXT("Block = %d"), (int)Generator.GetBlock(Point.first, Point.second));
+		SpawnActor(Generator.GetBlock(Point.first, Point.second), Point.first * GridToCoordMult, Point.second * GridToCoordMult);
 	}
 }
 
