@@ -2,6 +2,8 @@
 
 
 #include "GameMaster.h"
+#include <UniPurge/BaseBlock.h>
+
 
 // Sets default values
 AGameMaster::AGameMaster()
@@ -11,6 +13,8 @@ AGameMaster::AGameMaster()
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
 	RootComponent = StaticMesh;
 	Generator = WorldGenerator(1, Height, Width);
+	generator.seed(std::rand());
+	//generator.seed(1);
 }
 
 // Called when the game starts or when spawned
@@ -41,12 +45,14 @@ void AGameMaster::BeginPlay()
 
 void AGameMaster::StartGeneration()
 {
+	//We generate the roads
 	for (int i = 0; i < Height * Width; i++) 
 	{
 		std::pair<int, int> Point = Generator.GetLessEntropy();
 		UE_LOG(LogTemp, Warning, TEXT("Position (%d, %d)"), Point.first, Point.second);
 		//We chose if we put empty or not 50%
-		int option = std::rand() % 2;
+		std::discrete_distribution<int> var({1,0.3});
+		int option = var(generator);
 		//int option = 0;
 		//Check if an empty is possible
 		if (option == 1 && Generator.CanEmpty(Point.first, Point.second))
@@ -62,13 +68,37 @@ void AGameMaster::StartGeneration()
 			}
 			else
 			{
-				option = std::rand() % Generator.GetPosibilities(Point.first, Point.second);
+				std::vector<int> dist;
+				std::vector<int> op = Generator.GetOptions(Point.first, Point.second);
+				for (int j = 0; j < Generator.GetPosibilities(Point.first, Point.second); j++)
+				{
+					if (op[j] < 12)	dist.push_back(12);
+					else if (op[j] < 16)	dist.push_back(6);
+					else	dist.push_back(1);
+				}
+				std::discrete_distribution<int> distribution (std::begin(dist), std::end(dist));
+				option = distribution(generator);
 				Generator.CollapseList(Point.first, Point.second, option);
 			}
 		}
 		
 		UE_LOG(LogTemp, Warning, TEXT("Block = %d"), (int)Generator.GetBlock(Point.first, Point.second));
-		SpawnActor(Generator.GetBlock(Point.first, Point.second), Point.first * GridToCoordMult, Point.second * GridToCoordMult);
+		//Old spawning implementation with blueprints
+		//SpawnActor(Generator.GetBlock(Point.first, Point.second), Point.first * GridToCoordMult, Point.second * GridToCoordMult);
+		GenerarActor(Generator.GetBlock(Point.first, Point.second), Point.first * GridToCoordMult, Point.second * GridToCoordMult);
+	}
+	//We generate the houses
+	//TODO search for roads and all adjacent empties; then start a globe on them
+	for (int i = 0; i < Height; i++)
+	{
+		for(int j = 0; j < Width; j++)
+			if (Generator.GetBlock(i, j) == Block::EMPTY)
+			{
+				Generator.CreateHoses(i, j);
+				//Old spawning implementation with blueprints
+				//SpawnActor(Generator.GetBlock(i, j), i * GridToCoordMult, j * GridToCoordMult);
+				GenerarActor(Generator.GetBlock(i, j), i * GridToCoordMult, j * GridToCoordMult);
+		}
 	}
 }
 
@@ -79,5 +109,14 @@ void AGameMaster::Tick(float DeltaTime)
 
 }
 
-void AGameMaster::SpawnActor_Implementation(Block ChosenRoad, int XPosition, int YPosition) {}
+void AGameMaster::GenerarActor(Block ChosenRoad, int XPosition, int YPosition)
+{
+	const FVector Location = {StaticCast<float>(XPosition), StaticCast<float>(YPosition), 10.0};
+	const FRotator Rotation = GetActorRotation();
+	ABaseBlock* actor = GetWorld()->SpawnActor<ABaseBlock>(ActorToSpawn, Location, Rotation);
+	actor->SetStats(ChosenRoad);
+}
+
+//Old spawning implementation with blueprints
+//void AGameMaster::SpawnActor_Implementation(Block ChosenRoad, int XPosition, int YPosition) {}
 

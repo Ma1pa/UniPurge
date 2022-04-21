@@ -64,6 +64,10 @@ public:
 	*/
 	void CollapseList(int X, int Y, int chosen);
 
+	std::vector<int> GetOptions(int X, int Y);
+
+	void CreateHoses(int X, int Y);
+
 protected:
 	/* Tile map used to guide generation */
 	std::vector<Tile> TileMap;
@@ -74,7 +78,11 @@ protected:
 	* @param MovementFromRemoved : The direction from the previous tile where the funciton was called
 	* @param collides : If the road from Removed collides with the tile
 	*/
-	void RecursivePropagation(int X, int Y, Direction MovementFromRemoved, bool collides);
+	void RecursivePropagation(int X, int Y, Direction MovementFromRemoved, bool collides, bool isEmpty);
+
+	bool CheckSpots(int X, int Y);
+
+	void CallSides(int X, int Y, int block);
 
 private:
 

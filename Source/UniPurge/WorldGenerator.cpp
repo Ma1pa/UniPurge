@@ -16,6 +16,7 @@ WorldGenerator::WorldGenerator(int S, int H, int W)
 		TileMap.push_back(Tile());
 		TileMap[i].Location = i;
 		TileMap[i].posibilities.assign(AllRoads, AllRoads + 12);
+		//TileMap[i].posibilities.assign(AllSimpleRoads, AllSimpleRoads + 7);
 		//for (int j = 0; j < 16; j++)
 		//	TileMap[i].posibilities.push_back(j+1);
 		TileMap[i].block = Block::NOTHING;
@@ -44,26 +45,8 @@ std::pair<int, int> WorldGenerator::GetLessEntropy()
 	return get_2d(bestPosition);
 }
 
-void WorldGenerator::CollapseOptions(int X, int Y, int chosen)
+void WorldGenerator::CollapseList(int X, int Y, int chosen)
 {
-	Block selected = StaticCast<Block>(chosen);
-	TileMap[get_1d(X, Y)].block = selected;
-	//Clean all other possible options and remove such options from the adjacent tiles
-	TileMap[get_1d(X, Y)].posibilities = std::vector<int>{ chosen };
-	
-	//Call to north
-	if(X < (Height-1))	RecursivePropagation(X+1, Y, Direction::NORTH, RoadInDirection(selected, Direction::NORTH));
-	//Call to south
-	if(X > 0)	RecursivePropagation(X-1, Y, Direction::SOUTH, RoadInDirection(selected, Direction::SOUTH));
-	//Call to east
-	if(Y < (Width-1))	RecursivePropagation(X, Y+1, Direction::EAST, RoadInDirection(selected, Direction::EAST));
-	//Call to west
-	if(Y > 0)	RecursivePropagation(X, Y-1, Direction::WEST, RoadInDirection(selected, Direction::WEST));
-
-}
-
-void WorldGenerator::CollapseList(int X, int Y, int chosen) 
-{ 
 	if (chosen == -1)
 	{
 		//There are no options left; so we search for any of the no exit routes
@@ -72,24 +55,49 @@ void WorldGenerator::CollapseList(int X, int Y, int chosen)
 		//South
 		else if (X > 0 && RoadInDirection(TileMap[get_1d(X - 1, Y)].block, Direction::NORTH))	CollapseOptions(X, Y, 3);
 		//East
-		else if (Y < (Width - 1) && RoadInDirection(TileMap[get_1d(X, Y+1)].block, Direction::WEST))	CollapseOptions(X, Y, 4);
+		else if (Y < (Width - 1) && RoadInDirection(TileMap[get_1d(X, Y + 1)].block, Direction::WEST))	CollapseOptions(X, Y, 4);
 		//West
-		else if (Y > 0 && RoadInDirection(TileMap[get_1d(X, Y-1)].block, Direction::EAST))	CollapseOptions(X, Y, 5);
+		else if (Y > 0 && RoadInDirection(TileMap[get_1d(X, Y - 1)].block, Direction::EAST))	CollapseOptions(X, Y, 5);
 	}
 	else
-		CollapseOptions(X, Y, TileMap[get_1d(X, Y)].posibilities[chosen]); 
+		CollapseOptions(X, Y, TileMap[get_1d(X, Y)].posibilities[chosen]);
 }
 
-void WorldGenerator::RecursivePropagation(int X, int Y, Direction MovementFromRemoved, bool collides)
+std::vector<int> WorldGenerator::GetOptions(int X, int Y)
+{
+	return TileMap[get_1d(X, Y)].posibilities;
+}
+
+void WorldGenerator::CreateHoses(int X, int Y)
+{
+	TileMap[get_1d(X, Y)].block = Block::BUILDING;
+}
+
+void WorldGenerator::CollapseOptions(int X, int Y, int chosen)
+{
+	Block selected = StaticCast<Block>(chosen);
+	TileMap[get_1d(X, Y)].block = selected;
+	//Clean all other possible options and remove such options from the adjacent tiles
+	TileMap[get_1d(X, Y)].posibilities = std::vector<int>{ chosen };
+	
+	CallSides(X, Y, chosen);
+
+}
+
+void WorldGenerator::RecursivePropagation(int X, int Y, Direction MovementFromRemoved, bool collides, bool isEmpty)
 {
 	if (TileMap[get_1d(X, Y)].block != Block::NOTHING)	return;
 	std::vector<int> options;
-	
-	//if (TileMap[get_1d(X, Y)].posibilities.size() <= 0)
-	//{
-	//	TileMap[get_1d(X,Y)].posibilities = { 17 };
-	//	return;
-	//}
+	//if the block collides another block but it cannot connect; make it empty
+	//We firstly check if the block connects to another road in another side
+	if (!collides && !isEmpty && !CheckSpots(X,Y))
+	{
+		options.push_back(1);
+		TileMap[get_1d(X, Y)].posibilities = options;
+		//We do another recursion since we no longer can connect to the adjacent blocks
+		CallSides(X, Y, 1);
+		return;
+	}
 	//We get the intersection between all current posibilities and all posibilities that connect
 	switch (MovementFromRemoved)
 	{
@@ -121,19 +129,30 @@ void WorldGenerator::RecursivePropagation(int X, int Y, Direction MovementFromRe
 										options.begin(), options.end(), std::back_inserter(rest));
 		TileMap[get_1d(X, Y)].posibilities = rest;
 	}
-	//Technically no more than 1 lvl of recursion required with the roads
-	Block chosen = TileMap[get_1d(X, Y)].block;
-	if (chosen != Block::NOTHING)
-	{
-		//Call to north
-		if (X < Height)	RecursivePropagation(X + 1, Y, Direction::SOUTH, RoadInDirection(chosen, Direction::NORTH));
-		//Call to south
-		if (X > 0)	RecursivePropagation(X - 1, Y, Direction::NORTH, RoadInDirection(chosen, Direction::SOUTH));
-		//Call to east
-		if (Y < Width)	RecursivePropagation(X, Y + 1, Direction::WEST, RoadInDirection(chosen, Direction::EAST));
-		//Call to west
-		if (Y > 0)	RecursivePropagation(X, Y - 1, Direction::EAST, RoadInDirection(chosen, Direction::WEST));
-	}
+
+	//We do not require another recursion since we can still connect to unknown blocks
+	//CallSides(X, Y, 0);
+}
+
+bool WorldGenerator::CheckSpots(int X, int Y)
+{
+	if (RoadInDirection(TileMap[get_1d(X + 1, Y)].block, Direction::SOUTH))	return true;
+	if (RoadInDirection(TileMap[get_1d(X-1, Y)].block, Direction::NORTH))	return true;
+	if (RoadInDirection(TileMap[get_1d(X, Y+1)].block, Direction::WEST))	return true;
+	if (RoadInDirection(TileMap[get_1d(X, Y-1)].block, Direction::EAST))	return true;
+	return false;
+}
+
+void WorldGenerator::CallSides(int X, int Y, int block)
+{
+	//Call to north
+	if (X < (Height - 1))	RecursivePropagation(X + 1, Y, Direction::NORTH, RoadInDirection(StaticCast<Block>(block), Direction::NORTH), block == 1);
+	//Call to south
+	if (X > 0)	RecursivePropagation(X - 1, Y, Direction::SOUTH, RoadInDirection(StaticCast<Block>(block), Direction::SOUTH), block == 1);
+	//Call to east
+	if (Y < (Width - 1))	RecursivePropagation(X, Y + 1, Direction::EAST, RoadInDirection(StaticCast<Block>(block), Direction::EAST), block == 1);
+	//Call to west
+	if (Y > 0)	RecursivePropagation(X, Y - 1, Direction::WEST, RoadInDirection(StaticCast<Block>(block), Direction::WEST), block == 1);
 }
 
 bool WorldGenerator::RoadInDirection(Block road, Direction direction)

@@ -39,6 +39,7 @@ enum class Direction : uint8
 
 static int AllBlocks[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17};
 static int AllRoads[]{ 1,6,7,8,9,10,11,12,13,14,15,16 };
+static int AllSimpleRoads[]{ 1,6,7,8,9,10,11 };
 static int AllNorth[7]{ 6,7,8,12,13,14,16 };
 static int AllSouth[7]{ 6,9,10,12,13,15,16 };
 static int AllEast[7]{ 7,9,11,12,14,15,16 };

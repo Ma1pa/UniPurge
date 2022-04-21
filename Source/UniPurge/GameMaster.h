@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "UniPurge/WorldGenerator.h"
 #include "UniPurge/Enums.h"
+#include <random>
+
 
 #include "GameMaster.generated.h"
 
@@ -30,6 +32,10 @@ public:
 
 private:
 	const int GridToCoordMult = 800;
+	std::default_random_engine generator;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AActor> ActorToSpawn;
 
 protected:
 	// Called when the game starts or when spawned
@@ -43,7 +49,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Spawning")
-	void SpawnActor(Block ChosenRoad, int XPosition, int YPosition);
 
+	//Old spawning implementation with blueprints
+	// UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Spawning")
+	//void SpawnActor(Block ChosenRoad, int XPosition, int YPosition);
+
+	void GenerarActor(Block ChosenRoad, int XPosition, int YPosition);
 };
