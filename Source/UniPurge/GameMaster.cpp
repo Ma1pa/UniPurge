@@ -5,6 +5,7 @@
 #include <UniPurge/BaseBlock.h>
 
 
+
 // Sets default values
 AGameMaster::AGameMaster()
 {
@@ -85,20 +86,60 @@ void AGameMaster::StartGeneration()
 		UE_LOG(LogTemp, Warning, TEXT("Block = %d"), (int)Generator.GetBlock(Point.first, Point.second));
 		//Old spawning implementation with blueprints
 		//SpawnActor(Generator.GetBlock(Point.first, Point.second), Point.first * GridToCoordMult, Point.second * GridToCoordMult);
-		GenerarActor(Generator.GetBlock(Point.first, Point.second), Point.first * GridToCoordMult, Point.second * GridToCoordMult);
+		if(Generator.GetBlock(Point.first, Point.second) != Block::EMPTY)
+			GenerarActor(Generator.GetBlock(Point.first, Point.second), Point.first, Point.second);
 	}
 	//We generate the houses
 	//TODO search for roads and all adjacent empties; then start a globe on them
+	int group = 0;
 	for (int i = 0; i < Height; i++)
 	{
 		for(int j = 0; j < Width; j++)
-			if (Generator.GetBlock(i, j) == Block::EMPTY)
-			{
-				Generator.CreateHoses(i, j);
-				//Old spawning implementation with blueprints
-				//SpawnActor(Generator.GetBlock(i, j), i * GridToCoordMult, j * GridToCoordMult);
-				GenerarActor(Generator.GetBlock(i, j), i * GridToCoordMult, j * GridToCoordMult);
+			//If we find a road
+		if (Generator.GetBlock(i, j) > Block::EMPTY && Generator.GetBlock(i, j) < Block::BUILDING)
+		{
+			//We search the adjacent blocks. And if any of them is empty, generate a building and start generating a group
+			if (i < Height - 1	&& Generator.GetBlock(i + 1, j) == Block::EMPTY && Generator.GetGroup(i + 1, j) == -1)	GroupHouses(i + 1, j, group++);
+			if (i > 0			&& Generator.GetBlock(i - 1, j) == Block::EMPTY && Generator.GetGroup(i - 1, j) == -1)	GroupHouses(i - 1, j, group++);
+			if (j < Width - 1	&& Generator.GetBlock(i, j + 1) == Block::EMPTY && Generator.GetGroup(i, j + 1) == -1)	GroupHouses(i, j + 1, group++);
+			if (j > 0			&& Generator.GetBlock(i, j - 1) == Block::EMPTY && Generator.GetGroup(i, j - 1) == -1)	GroupHouses(i, j - 1, group++);
+			
+			//Old spawning implementation with blueprints
+			//SpawnActor(Generator.GetBlock(i, j), i * GridToCoordMult, j * GridToCoordMult);	
 		}
+	}
+	//We operate on all the houses to build the sides
+	while (!Actualizar.empty())
+	{
+		ABaseBlock* actor = Actualizar.front();
+		Actualizar.pop();
+		ActualizarActor(actor, actor->GetActorTransform().GetLocation().X/ GridToCoordMult, actor->GetActorTransform().GetLocation().Y/ GridToCoordMult);
+	}
+}
+
+void AGameMaster::GroupHouses(int X, int Y, int group)
+{
+	std::discrete_distribution<int> var({ 0.5,1,2,1,0.5 });
+	int modifier = var(generator) - 2;
+	//The amount of blocks we want in the group
+	int groupSize = AverageGroup + modifier;
+	std::stack<std::pair<int,int>> posibilidades;
+	int iterator = 0;
+	posibilidades.push(std::pair<int,int>{ X,Y });
+	//Iterative recursion
+	while (iterator++ < groupSize && !posibilidades.empty())
+	{
+		std::pair<int, int> actual = posibilidades.top();
+		UE_LOG(LogTemp, Warning, TEXT("UnaCasita en (%d, %d)"), actual.first, actual.second);
+		posibilidades.pop();
+		Generator.CreateHoses(actual.first, actual.second, group);
+		GenerarActor(Generator.GetBlock(actual.first, actual.second), actual.first, actual.second);
+		//Check the sides
+		if (actual.first < Height-1	&& Generator.GetBlock(actual.first + 1, actual.second) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first + 1, actual.second });
+		if (actual.first > 0		&& Generator.GetBlock(actual.first - 1, actual.second) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first - 1, actual.second });
+		if (actual.second < Width-1 && Generator.GetBlock(actual.first, actual.second + 1) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first, actual.second + 1 });
+		if (actual.second > 0		&& Generator.GetBlock(actual.first, actual.second - 1) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first, actual.second - 1 });
+		
 	}
 }
 
@@ -111,10 +152,24 @@ void AGameMaster::Tick(float DeltaTime)
 
 void AGameMaster::GenerarActor(Block ChosenRoad, int XPosition, int YPosition)
 {
-	const FVector Location = {StaticCast<float>(XPosition), StaticCast<float>(YPosition), 10.0};
+	const FVector Location = {StaticCast<float>(XPosition * GridToCoordMult), StaticCast<float>(YPosition * GridToCoordMult), 10.0};
 	const FRotator Rotation = GetActorRotation();
 	ABaseBlock* actor = GetWorld()->SpawnActor<ABaseBlock>(ActorToSpawn, Location, Rotation);
+	if(ChosenRoad == Block::BUILDING)
+		Actualizar.push(actor);
+	
 	actor->SetStats(ChosenRoad);
+}
+
+void AGameMaster::ActualizarActor(ABaseBlock* actor, int X, int Y)
+{
+	int group = Generator.GetGroup(X, Y);
+	actor->SetNewExits(	Generator.CompareGroup(X + 1, Y, group),
+						Generator.CompareGroup(X, Y + 1, group),
+						Generator.CompareGroup(X - 1, Y, group),
+						Generator.CompareGroup(X, Y - 1, group));
+
+	actor->UpdateBuilding();
 }
 
 //Old spawning implementation with blueprints

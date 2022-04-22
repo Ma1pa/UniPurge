@@ -8,6 +8,8 @@
 
 #include "BaseBlock.generated.h"
 
+
+
 UCLASS()
 class UNIPURGE_API ABaseBlock : public AActor
 {
@@ -23,12 +25,28 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
 		TArray<UStaticMesh*> ListOfMeshes;
 
+	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
+		UStaticMesh* CeilingMesh;
+
+	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
+		UStaticMesh* BlockWall;
+
+	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
+		UStaticMesh* OpenWall;
+
+	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
+		UStaticMesh* DoorWall;
+
+	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
+		UStaticMesh* ConectorWall;
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	//List of all avaiable meshes
-
+	//List of all possible elements
+	UStaticMeshComponent* StaticElements[5];
 
 public:	
 	// Called every frame
@@ -36,7 +54,14 @@ public:
 
 	void SetStats(Block block);
 
+	void UpdateBuilding();
+
+	void CreateBuildingElement(int side);
+
+	void SetNewExits(int North, int South, int East, int West);
+
 private:
+	Connections horizontalExits[4]{Connections::NOTHING};
 	Block currentBlock;
 
 	UStaticMesh* GetMesh(Block selected);

@@ -20,7 +20,7 @@ WorldGenerator::WorldGenerator(int S, int H, int W)
 		//for (int j = 0; j < 16; j++)
 		//	TileMap[i].posibilities.push_back(j+1);
 		TileMap[i].block = Block::NOTHING;
-		TileMap[i].group = 0;
+		TileMap[i].group = -1;
 	}
 	
 }
@@ -68,9 +68,26 @@ std::vector<int> WorldGenerator::GetOptions(int X, int Y)
 	return TileMap[get_1d(X, Y)].posibilities;
 }
 
-void WorldGenerator::CreateHoses(int X, int Y)
+int WorldGenerator::CompareGroup(int X, int Y, int group)
+{
+	//The point is not in the tilemap
+	if (X < 0 || Y < 0 || X >= Width || Y >= Height)	return 0;
+	//The point is in the tilemap
+	if (TileMap[get_1d(X, Y)].block < Block::BUILDING && TileMap[get_1d(X, Y)].block > Block::EMPTY)	return 1;
+	if (TileMap[get_1d(X, Y)].group == group)	return 2;
+	return 3;
+}
+
+int WorldGenerator::GetGroup(int X, int Y)
+{
+	if (X < 0 || Y < 0 || get_1d(X, Y) > std::size(TileMap))	return -1;
+	return TileMap[get_1d(X, Y)].group;
+}
+
+void WorldGenerator::CreateHoses(int X, int Y, int group)
 {
 	TileMap[get_1d(X, Y)].block = Block::BUILDING;
+	TileMap[get_1d(X, Y)].group = group;
 }
 
 void WorldGenerator::CollapseOptions(int X, int Y, int chosen)

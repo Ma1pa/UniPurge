@@ -6,10 +6,13 @@
 #include "GameFramework/Actor.h"
 #include "UniPurge/WorldGenerator.h"
 #include "UniPurge/Enums.h"
+#include "UniPurge/BaseBlock.h"
 #include <random>
-
+#include <stack>
+#include <queue>
 
 #include "GameMaster.generated.h"
+
 
 
 UCLASS()
@@ -37,6 +40,10 @@ private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<AActor> ActorToSpawn;
 
+	const int AverageGroup = 4;
+
+	std::queue<ABaseBlock*> Actualizar;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -44,6 +51,8 @@ protected:
 	WorldGenerator Generator;
 
 	void StartGeneration();
+
+	void GroupHouses(int X, int Y, int group);
 
 public:	
 	// Called every frame
@@ -55,4 +64,5 @@ public:
 	//void SpawnActor(Block ChosenRoad, int XPosition, int YPosition);
 
 	void GenerarActor(Block ChosenRoad, int XPosition, int YPosition);
+	void ActualizarActor(ABaseBlock* actor, int X, int Y);
 };

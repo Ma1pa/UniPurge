@@ -8,6 +8,11 @@ ABaseBlock::ABaseBlock()
 {
 	currentBlock = Block::NOTHING;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
+	for (int i = 0; i < std::size(StaticElements); i++)
+	{
+		StaticElements[i] = CreateDefaultSubobject<UStaticMeshComponent>(FName(*FString::FromInt(i)));
+		StaticElements[i]->AttachToComponent(StaticMesh,FAttachmentTransformRules::KeepWorldTransform);
+	}
 	RootComponent = StaticMesh;
 	
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -32,6 +37,56 @@ void ABaseBlock::SetStats(Block block)
 {
 	currentBlock = block;
 	StaticMesh->SetStaticMesh(GetMesh(currentBlock));
+	
+}
+
+void ABaseBlock::UpdateBuilding()
+{
+	CreateBuildingElement(0);	//North
+	CreateBuildingElement(1);	//East
+	CreateBuildingElement(2);	//South
+	CreateBuildingElement(3);	//West
+	CreateBuildingElement(4);	//Up
+}
+
+void ABaseBlock::CreateBuildingElement(int side)
+{
+	const FVector Location = GetActorLocation();
+
+	if (side < 4)
+	{
+		FRotator Rotation = FRotator::MakeFromEuler(FVector{0,0,90.0f * side});	// North - East - South - West
+		StaticElements[side]->AddLocalRotation(Rotation);
+		switch (horizontalExits[side])
+		{
+		case Connections::DISCONNECTED:
+			StaticElements[side]->SetStaticMesh(OpenWall);
+			break;
+		case Connections::EXIT:
+			StaticElements[side]->SetStaticMesh(DoorWall);
+			break;
+		case Connections::SAMEGROUP:
+			StaticElements[side]->SetStaticMesh(ConectorWall);
+			break;
+		case Connections::DIFFERENTGROUP:
+			StaticElements[side]->SetStaticMesh(BlockWall);
+			break;
+		}
+	}
+	else
+	{
+		FRotator Rotation = GetActorRotation();
+		StaticElements[side]->SetStaticMesh(CeilingMesh);
+	}
+}
+
+void ABaseBlock::SetNewExits(int North, int South, int East, int West)
+{
+	horizontalExits[0] = StaticCast<Connections>(North);
+	horizontalExits[1] = StaticCast<Connections>(South);
+	horizontalExits[2] = StaticCast<Connections>(East);
+	horizontalExits[3] = StaticCast<Connections>(West);
+	return;
 }
 
 UStaticMesh* ABaseBlock::GetMesh(Block selected)

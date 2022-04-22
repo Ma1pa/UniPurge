@@ -66,7 +66,11 @@ public:
 
 	std::vector<int> GetOptions(int X, int Y);
 
-	void CreateHoses(int X, int Y);
+	int CompareGroup(int X, int Y, int group);
+
+	int GetGroup(int X, int Y);
+
+	void CreateHoses(int X, int Y, int group);
 
 protected:
 	/* Tile map used to guide generation */

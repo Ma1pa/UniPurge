@@ -37,6 +37,15 @@ enum class Direction : uint8
 	WEST UMETA(DisplayName = "West")
 };
 
+enum class Connections : uint8
+{
+	DISCONNECTED,	//Connections with unrelated blocks; like rivers or other groups
+	EXIT,			//Connections that can have an exit; like a road or park
+	SAMEGROUP,		//Connections between the same house groups
+	DIFFERENTGROUP,	//Connections to another building without any connection
+	NOTHING
+};
+
 static int AllBlocks[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17};
 static int AllRoads[]{ 1,6,7,8,9,10,11,12,13,14,15,16 };
 static int AllSimpleRoads[]{ 1,6,7,8,9,10,11 };
