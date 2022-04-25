@@ -14,6 +14,7 @@ ABaseBlock::ABaseBlock()
 	{
 		StaticElements[i] = CreateDefaultSubobject<UStaticMeshComponent>(FName(*FString::FromInt(i)));
 		StaticElements[i]->LDMaxDrawDistance = 30000.0f;
+		//StaticElements[i]->AddToRoot();
 		StaticElements[i]->AttachToComponent(StaticMesh,FAttachmentTransformRules::KeepWorldTransform);
 	}
 	RootComponent = StaticMesh;
@@ -48,7 +49,7 @@ void ABaseBlock::SetStats(Block block, int height)
 	}
 	HeightFromThis = height;
 	UE_LOG(LogTemp, Warning, TEXT("Height = %d"), height);
-	if (HeightFromThis > 0)
+	if (HeightFromThis > 0 && currentBlock == Block::BUILDING)
 	{
 		//We create a new block on top
 		const FVector Location = { AActor::GetActorLocation().X, AActor::GetActorLocation().Y, AActor::GetActorLocation().Z + 300.0f };
@@ -81,7 +82,6 @@ void ABaseBlock::CreateBuildingElement(int side)
 
 	if (side < 4)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Ventanas = %d"), OpenWall.Num());
 		FRotator Rotation = FRotator::MakeFromEuler(FVector{0,0,90.0f * side});	// North - East - South - West
 		StaticElements[side]->AddLocalRotation(Rotation);
 		switch (horizontalExits[side])
@@ -196,6 +196,9 @@ UStaticMesh* ABaseBlock::GetMesh(Block selected)
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
 		return ListOfMeshes[5];
 		break;
+	case Block::PARK:
+		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
+		return ListOfMeshes[6];
 	default:
 		break;
 	}

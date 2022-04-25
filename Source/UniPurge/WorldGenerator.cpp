@@ -74,7 +74,7 @@ int WorldGenerator::CompareGroup(int X, int Y, int group)
 	//The point is not in the tilemap
 	if (X < 0 || Y < 0 || X >= Width || Y >= Height)	return 0;
 	//The point is in the tilemap
-	if (TileMap[get_1d(X, Y)].block < Block::BUILDING && TileMap[get_1d(X, Y)].block > Block::EMPTY)	return 1;
+	if (TileMap[get_1d(X, Y)].block != Block::BUILDING && TileMap[get_1d(X, Y)].block > Block::EMPTY)	return 1;
 	if (TileMap[get_1d(X, Y)].group == group)	return 2;
 	return 3;
 }
@@ -90,9 +90,10 @@ int WorldGenerator::GetHeight(int X, int Y)
 	return TileMap[get_1d(X, Y)].height;
 }
 
-void WorldGenerator::CreateHoses(int X, int Y, int group, int h)
+void WorldGenerator::CreateHoses(int X, int Y, int group, int h, bool park)
 {
-	TileMap[get_1d(X, Y)].block = Block::BUILDING;
+	if(park)	TileMap[get_1d(X, Y)].block = Block::PARK;
+	else	TileMap[get_1d(X, Y)].block = Block::BUILDING;
 	TileMap[get_1d(X, Y)].group = group;
 	TileMap[get_1d(X, Y)].height = h;
 }

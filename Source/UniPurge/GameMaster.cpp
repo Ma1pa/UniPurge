@@ -82,11 +82,12 @@ void AGameMaster::StartGeneration()
 			//If we find a road
 		if (Generator.GetBlock(i, j) > Block::EMPTY && Generator.GetBlock(i, j) < Block::BUILDING)
 		{
+			std::discrete_distribution<int> ProbParque({ 2,0.5 });
 			//We search the adjacent blocks. And if any of them is empty, generate a building and start generating a group
-			if (i < Height - 1	&& Generator.GetBlock(i + 1, j) == Block::EMPTY && Generator.GetGroup(i + 1, j) == -1)	GroupHouses(i + 1, j, group++);
-			if (i > 0			&& Generator.GetBlock(i - 1, j) == Block::EMPTY && Generator.GetGroup(i - 1, j) == -1)	GroupHouses(i - 1, j, group++);
-			if (j < Width - 1	&& Generator.GetBlock(i, j + 1) == Block::EMPTY && Generator.GetGroup(i, j + 1) == -1)	GroupHouses(i, j + 1, group++);
-			if (j > 0			&& Generator.GetBlock(i, j - 1) == Block::EMPTY && Generator.GetGroup(i, j - 1) == -1)	GroupHouses(i, j - 1, group++);
+			if (i < Height - 1	&& Generator.GetBlock(i + 1, j) == Block::EMPTY && Generator.GetGroup(i + 1, j) == -1)	GroupHouses(i + 1, j, group++, ProbParque(generator) == 1);
+			if (i > 0			&& Generator.GetBlock(i - 1, j) == Block::EMPTY && Generator.GetGroup(i - 1, j) == -1)	GroupHouses(i - 1, j, group++, ProbParque(generator) == 1);
+			if (j < Width - 1	&& Generator.GetBlock(i, j + 1) == Block::EMPTY && Generator.GetGroup(i, j + 1) == -1)	GroupHouses(i, j + 1, group++, ProbParque(generator) == 1);
+			if (j > 0			&& Generator.GetBlock(i, j - 1) == Block::EMPTY && Generator.GetGroup(i, j - 1) == -1)	GroupHouses(i, j - 1, group++, ProbParque(generator) == 1);
 			
 			//Old spawning implementation with blueprints
 			//SpawnActor(Generator.GetBlock(i, j), i * GridToCoordMult, j * GridToCoordMult);	
@@ -101,7 +102,7 @@ void AGameMaster::StartGeneration()
 	}
 }
 
-void AGameMaster::GroupHouses(int X, int Y, int group)
+void AGameMaster::GroupHouses(int X, int Y, int group, bool park)
 {
 	std::discrete_distribution<int> var({ 0.5,1,2,1,0.5 });
 	int modifier = var(generator) - 2;
@@ -117,7 +118,7 @@ void AGameMaster::GroupHouses(int X, int Y, int group)
 	{
 		std::pair<int, int> actual = posibilidades.top();
 		posibilidades.pop();
-		Generator.CreateHoses(actual.first, actual.second, group, height);
+		Generator.CreateHoses(actual.first, actual.second, group, height, park);
 		GenerarActor(Generator.GetBlock(actual.first, actual.second), actual.first, actual.second);
 		//Check the sides
 		if (actual.first < Height-1	&& Generator.GetBlock(actual.first + 1, actual.second) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first + 1, actual.second });

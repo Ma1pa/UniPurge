@@ -52,7 +52,7 @@ protected:
 
 	void StartGeneration();
 
-	void GroupHouses(int X, int Y, int group);
+	void GroupHouses(int X, int Y, int group, bool park);
 
 public:	
 	

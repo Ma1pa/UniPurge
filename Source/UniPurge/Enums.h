@@ -26,7 +26,8 @@ enum class Block : uint8
 	ROAD_N_E_W UMETA(DisplayName = "Road North-East-West"),			//14
 	ROAD_S_E_W UMETA(DisplayName = "Road South-East-West"),			//15
 	ROAD_N_S_E_W  UMETA(DisplayName = "Road Cross"),				//16
-	BUILDING UMETA(DisplayName = "Building")						//17
+	BUILDING UMETA(DisplayName = "Building"),						//17
+	PARK UMETA(DisplayName = "Park")								//18
 };
 
 UENUM(BlueprintType)
