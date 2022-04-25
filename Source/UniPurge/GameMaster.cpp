@@ -26,22 +26,6 @@ void AGameMaster::BeginPlay()
 	new (&Generator) WorldGenerator(1, Height, Width);
 	Super::BeginPlay();
 	StartGeneration();
-
-	//SpawnActor(Block::ROAD_N, 1 * GridToCoordMult, 1 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_S, 1 * GridToCoordMult, 2 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_E, 1 * GridToCoordMult, 3 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_W, 1 * GridToCoordMult, 4 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_S, 1 * GridToCoordMult, 5 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_E, 1 * GridToCoordMult, 6 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_W, 1 * GridToCoordMult, 7 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_S_E, 1 * GridToCoordMult, 8 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_S_W, 1 * GridToCoordMult, 9 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_E_W, 1 * GridToCoordMult, 10 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_S_E, 1 * GridToCoordMult, 11 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_S_W, 1 * GridToCoordMult, 12 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_E_W, 1 * GridToCoordMult, 13 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_S_E_W, 1 * GridToCoordMult, 14 * GridToCoordMult);
-	//SpawnActor(Block::ROAD_N_S_E_W, 1 * GridToCoordMult, 15 * GridToCoordMult);
 }
 
 void AGameMaster::StartGeneration()
@@ -125,14 +109,15 @@ void AGameMaster::GroupHouses(int X, int Y, int group)
 	int groupSize = AverageGroup + modifier;
 	std::stack<std::pair<int,int>> posibilidades;
 	int iterator = 0;
+	std::discrete_distribution<int> alt({ 2.5,5,10,8,6,4,2,1 });
+	int height = alt(generator);
 	posibilidades.push(std::pair<int,int>{ X,Y });
 	//Iterative recursion
 	while (iterator++ < groupSize && !posibilidades.empty())
 	{
 		std::pair<int, int> actual = posibilidades.top();
-		UE_LOG(LogTemp, Warning, TEXT("UnaCasita en (%d, %d)"), actual.first, actual.second);
 		posibilidades.pop();
-		Generator.CreateHoses(actual.first, actual.second, group);
+		Generator.CreateHoses(actual.first, actual.second, group, height);
 		GenerarActor(Generator.GetBlock(actual.first, actual.second), actual.first, actual.second);
 		//Check the sides
 		if (actual.first < Height-1	&& Generator.GetBlock(actual.first + 1, actual.second) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first + 1, actual.second });
@@ -157,18 +142,21 @@ void AGameMaster::GenerarActor(Block ChosenRoad, int XPosition, int YPosition)
 	ABaseBlock* actor = GetWorld()->SpawnActor<ABaseBlock>(ActorToSpawn, Location, Rotation);
 	if(ChosenRoad == Block::BUILDING)
 		Actualizar.push(actor);
-	
-	actor->SetStats(ChosenRoad);
+	else
+		actor->SetStats(ChosenRoad, Generator.GetHeight(XPosition, YPosition));
 }
 
 void AGameMaster::ActualizarActor(ABaseBlock* actor, int X, int Y)
 {
+	
 	int group = Generator.GetGroup(X, Y);
+	actor->toggleFloor();
 	actor->SetNewExits(	Generator.CompareGroup(X + 1, Y, group),
 						Generator.CompareGroup(X, Y + 1, group),
 						Generator.CompareGroup(X - 1, Y, group),
 						Generator.CompareGroup(X, Y - 1, group));
-
+	actor->SetStats(Generator.GetBlock(X, Y), Generator.GetHeight(X, Y));
+	
 	actor->UpdateBuilding();
 }
 

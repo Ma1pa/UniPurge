@@ -26,20 +26,27 @@ public:
 		TArray<UStaticMesh*> ListOfMeshes;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		UStaticMesh* CeilingMesh;
+		UStaticMesh* BasicFloor;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
 		UStaticMesh* BlockWall;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		UStaticMesh* OpenWall;
+		TArray<UStaticMesh*> OpenWall;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		UStaticMesh* DoorWall;
+		TArray<UStaticMesh*> DoorWall;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
 		UStaticMesh* ConectorWall;
 
+	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
+		TArray<UStaticMesh*> FloorMeshes;
+
+	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
+		TArray<UStaticMesh*> BlockMeshes;
+
+	bool floored = false;
 
 protected:
 	// Called when the game starts or when spawned
@@ -52,7 +59,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void SetStats(Block block);
+	void SetStats(Block block, int height);
 
 	void UpdateBuilding();
 
@@ -60,10 +67,14 @@ public:
 
 	void SetNewExits(int North, int South, int East, int West);
 
+	void toggleFloor();
+
 private:
 	Connections horizontalExits[4]{Connections::NOTHING};
 	Block currentBlock;
 
 	UStaticMesh* GetMesh(Block selected);
+
+	int HeightFromThis;
 
 };

@@ -21,6 +21,7 @@ WorldGenerator::WorldGenerator(int S, int H, int W)
 		//	TileMap[i].posibilities.push_back(j+1);
 		TileMap[i].block = Block::NOTHING;
 		TileMap[i].group = -1;
+		TileMap[i].height = 0;
 	}
 	
 }
@@ -84,10 +85,16 @@ int WorldGenerator::GetGroup(int X, int Y)
 	return TileMap[get_1d(X, Y)].group;
 }
 
-void WorldGenerator::CreateHoses(int X, int Y, int group)
+int WorldGenerator::GetHeight(int X, int Y)
+{
+	return TileMap[get_1d(X, Y)].height;
+}
+
+void WorldGenerator::CreateHoses(int X, int Y, int group, int h)
 {
 	TileMap[get_1d(X, Y)].block = Block::BUILDING;
 	TileMap[get_1d(X, Y)].group = group;
+	TileMap[get_1d(X, Y)].height = h;
 }
 
 void WorldGenerator::CollapseOptions(int X, int Y, int chosen)

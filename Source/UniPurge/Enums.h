@@ -4,6 +4,7 @@
 
 #include <vector>
 #include "CoreMinimal.h"
+#include <random>
 
 UENUM(BlueprintType)
 enum class Block : uint8
@@ -54,6 +55,8 @@ static int AllSouth[7]{ 6,9,10,12,13,15,16 };
 static int AllEast[7]{ 7,9,11,12,14,15,16 };
 static int AllWest[7]{ 8,10,11,13,14,15,16 };
 
+static std::default_random_engine generator;
+
 struct Tile
 {
 	/* Location of the tile in the array representing the 2D grid*/
@@ -64,6 +67,8 @@ struct Tile
 	Block block;
 	/* Group of the tile */
 	int group;
+	/* Height of the block */
+	int height;
 };
 
 class UNIPURGE_API Enums

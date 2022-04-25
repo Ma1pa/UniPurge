@@ -34,8 +34,8 @@ public:
 		int Height = 10;
 
 private:
-	const int GridToCoordMult = 800;
-	std::default_random_engine generator;
+	
+	
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<AActor> ActorToSpawn;
@@ -55,6 +55,9 @@ protected:
 	void GroupHouses(int X, int Y, int group);
 
 public:	
+	
+
+	static const int GridToCoordMult = 800;
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

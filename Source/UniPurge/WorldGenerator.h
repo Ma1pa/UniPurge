@@ -70,7 +70,9 @@ public:
 
 	int GetGroup(int X, int Y);
 
-	void CreateHoses(int X, int Y, int group);
+	int GetHeight(int X, int Y);
+
+	void CreateHoses(int X, int Y, int group, int h);
 
 protected:
 	/* Tile map used to guide generation */

@@ -3,17 +3,21 @@
 
 #include "BaseBlock.h"
 
+
 // Sets default values
 ABaseBlock::ABaseBlock()
 {
 	currentBlock = Block::NOTHING;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
+	HeightFromThis = 0;
 	for (int i = 0; i < std::size(StaticElements); i++)
 	{
 		StaticElements[i] = CreateDefaultSubobject<UStaticMeshComponent>(FName(*FString::FromInt(i)));
+		StaticElements[i]->LDMaxDrawDistance = 30000.0f;
 		StaticElements[i]->AttachToComponent(StaticMesh,FAttachmentTransformRules::KeepWorldTransform);
 	}
 	RootComponent = StaticMesh;
+	floored = false;
 	
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -33,15 +37,37 @@ void ABaseBlock::Tick(float DeltaTime)
 
 }
 
-void ABaseBlock::SetStats(Block block)
+void ABaseBlock::SetStats(Block block, int height)
 {
 	currentBlock = block;
-	StaticMesh->SetStaticMesh(GetMesh(currentBlock));
+	if(currentBlock != Block::BUILDING)
+		StaticMesh->SetStaticMesh(GetMesh(currentBlock));
+	else
+	{
+		StaticMesh->SetStaticMesh(BlockMeshes[generator() % BlockMeshes.Num()]);
+	}
+	HeightFromThis = height;
+	UE_LOG(LogTemp, Warning, TEXT("Height = %d"), height);
+	if (HeightFromThis > 0)
+	{
+		//We create a new block on top
+		const FVector Location = { AActor::GetActorLocation().X, AActor::GetActorLocation().Y, AActor::GetActorLocation().Z + 300.0f };
+		const FRotator Rotation = GetActorRotation();
+		ABaseBlock* actor = GetWorld()->SpawnActor<ABaseBlock>(GetClass(), Location, Rotation);
+		
+		actor->SetNewExits(	horizontalExits[0] == Connections::SAMEGROUP ? 2 : horizontalExits[0] == Connections::DIFFERENTGROUP ? 3 : 0,
+							horizontalExits[1] == Connections::SAMEGROUP ? 2 : horizontalExits[1] == Connections::DIFFERENTGROUP ? 3 : 0, 
+							horizontalExits[2] == Connections::SAMEGROUP ? 2 : horizontalExits[2] == Connections::DIFFERENTGROUP ? 3 : 0, 
+							horizontalExits[3] == Connections::SAMEGROUP ? 2 : horizontalExits[3] == Connections::DIFFERENTGROUP ? 3 : 0);
+		actor->SetStats(Block::BUILDING, HeightFromThis - 1);
+		actor->UpdateBuilding();
+	}
 	
 }
 
 void ABaseBlock::UpdateBuilding()
 {
+	//TODO Make more floortypes for heights
 	CreateBuildingElement(0);	//North
 	CreateBuildingElement(1);	//East
 	CreateBuildingElement(2);	//South
@@ -55,15 +81,16 @@ void ABaseBlock::CreateBuildingElement(int side)
 
 	if (side < 4)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Ventanas = %d"), OpenWall.Num());
 		FRotator Rotation = FRotator::MakeFromEuler(FVector{0,0,90.0f * side});	// North - East - South - West
 		StaticElements[side]->AddLocalRotation(Rotation);
 		switch (horizontalExits[side])
 		{
 		case Connections::DISCONNECTED:
-			StaticElements[side]->SetStaticMesh(OpenWall);
+			StaticElements[side]->SetStaticMesh(OpenWall[generator() % OpenWall.Num()]);
 			break;
 		case Connections::EXIT:
-			StaticElements[side]->SetStaticMesh(DoorWall);
+			StaticElements[side]->SetStaticMesh(DoorWall[generator() % DoorWall.Num()]);
 			break;
 		case Connections::SAMEGROUP:
 			StaticElements[side]->SetStaticMesh(ConectorWall);
@@ -76,7 +103,14 @@ void ABaseBlock::CreateBuildingElement(int side)
 	else
 	{
 		FRotator Rotation = GetActorRotation();
-		StaticElements[side]->SetStaticMesh(CeilingMesh);
+		if (floored)
+		{
+			StaticElements[side]->SetStaticMesh(BasicFloor);
+		}
+		else
+		{
+			StaticElements[side]->SetStaticMesh(FloorMeshes[generator() % FloorMeshes.Num()]);
+		}
 	}
 }
 
@@ -87,6 +121,11 @@ void ABaseBlock::SetNewExits(int North, int South, int East, int West)
 	horizontalExits[2] = StaticCast<Connections>(East);
 	horizontalExits[3] = StaticCast<Connections>(West);
 	return;
+}
+
+void ABaseBlock::toggleFloor()
+{
+	floored = true;
 }
 
 UStaticMesh* ABaseBlock::GetMesh(Block selected)
