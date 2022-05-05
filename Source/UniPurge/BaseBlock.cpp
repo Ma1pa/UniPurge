@@ -14,8 +14,8 @@ ABaseBlock::ABaseBlock()
 	{
 		StaticElements[i] = CreateDefaultSubobject<UStaticMeshComponent>(FName(*FString::FromInt(i)));
 		StaticElements[i]->LDMaxDrawDistance = 30000.0f;
-		//StaticElements[i]->AddToRoot();
-		StaticElements[i]->AttachToComponent(StaticMesh,FAttachmentTransformRules::KeepWorldTransform);
+		StaticElements[i]->SetupAttachment(StaticMesh);
+		//StaticElements[i]->AttachToComponent(StaticMesh,FAttachmentTransformRules::KeepWorldTransform);
 	}
 	RootComponent = StaticMesh;
 	floored = false;

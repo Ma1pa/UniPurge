@@ -161,10 +161,10 @@ void WorldGenerator::RecursivePropagation(int X, int Y, Direction MovementFromRe
 
 bool WorldGenerator::CheckSpots(int X, int Y)
 {
-	if (RoadInDirection(TileMap[get_1d(X + 1, Y)].block, Direction::SOUTH))	return true;
-	if (RoadInDirection(TileMap[get_1d(X-1, Y)].block, Direction::NORTH))	return true;
-	if (RoadInDirection(TileMap[get_1d(X, Y+1)].block, Direction::WEST))	return true;
-	if (RoadInDirection(TileMap[get_1d(X, Y-1)].block, Direction::EAST))	return true;
+	if (X < (Height - 1) && RoadInDirection(TileMap[get_1d(X + 1, Y)].block, Direction::SOUTH))	return true;
+	if (X > 0 &&			RoadInDirection(TileMap[get_1d(X-1, Y)].block, Direction::NORTH))	return true;
+	if (Y < (Width - 1) &&	RoadInDirection(TileMap[get_1d(X, Y+1)].block, Direction::WEST))	return true;
+	if (Y > 0 &&			RoadInDirection(TileMap[get_1d(X, Y-1)].block, Direction::EAST))	return true;
 	return false;
 }
 
@@ -219,4 +219,9 @@ bool WorldGenerator::CanEmpty(int X, int Y)
 int WorldGenerator::GetPosibilities(int X, int Y)
 {
 	return TileMap[get_1d(X, Y)].posibilities.size();
+}
+
+void WorldGenerator::AddAgent(int X, int Y, ABaseBlock* bloque)
+{
+	TileMap[get_1d(X, Y)].agent = bloque;
 }

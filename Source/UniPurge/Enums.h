@@ -58,20 +58,6 @@ static int AllWest[7]{ 8,10,11,13,14,15,16 };
 
 static std::default_random_engine generator;
 
-struct Tile
-{
-	/* Location of the tile in the array representing the 2D grid*/
-	int Location;
-	/* Current possible blocks in the tile. Its length is the entropy */
-	std::vector<int> posibilities;
-	/* Block currently build in the location*/
-	Block block;
-	/* Group of the tile */
-	int group;
-	/* Height of the block */
-	int height;
-};
-
 class UNIPURGE_API Enums
 {
 public:

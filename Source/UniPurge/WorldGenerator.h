@@ -7,6 +7,23 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
+#include <UniPurge/BaseBlock.h>
+
+struct Tile
+{
+	/* Location of the tile in the array representing the 2D grid*/
+	int Location;
+	/* Current possible blocks in the tile. Its length is the entropy */
+	std::vector<int> posibilities;
+	/* Block currently build in the location*/
+	Block block;
+	/* Group of the tile */
+	int group;
+	/* Height of the block */
+	int height;
+	/* Agent of the tile */
+	ABaseBlock* agent;
+};
 
 /* Class used to generate the world in which the game takes place */
 class UNIPURGE_API WorldGenerator
@@ -49,6 +66,8 @@ public:
 	* @param Y : The Y position in the array
 	*/
 	int GetPosibilities(int X, int Y);
+
+	void AddAgent(int X, int Y, ABaseBlock* bloque);
 
 	/* Function called whenever a block is chosen. It collapses other options in the tile and simplifies the others
 	* @param X : The X position in the array where the block will be placed

@@ -10,6 +10,7 @@
 #include <random>
 #include <stack>
 #include <queue>
+#include <UniPurge/UniPurgeCharacter.h>
 
 #include "GameMaster.generated.h"
 
@@ -33,12 +34,15 @@ public:
 		/* Height of the desired grid */
 		int Height = 10;
 
+	UPROPERTY(EditAnywhere, Category = "Jugador")
+		AUniPurgeCharacter* jugador;
+
 private:
-	
-	
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<AActor> ActorToSpawn;
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<AActor> NPCToSpawn;
 
 	const int AverageGroup = 4;
 

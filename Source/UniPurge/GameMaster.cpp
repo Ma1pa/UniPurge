@@ -3,6 +3,7 @@
 
 #include "GameMaster.h"
 #include <UniPurge/BaseBlock.h>
+#include <UniPurge/BasicNPC.h>
 
 
 
@@ -57,6 +58,7 @@ void AGameMaster::StartGeneration()
 				std::vector<int> op = Generator.GetOptions(Point.first, Point.second);
 				for (int j = 0; j < Generator.GetPosibilities(Point.first, Point.second); j++)
 				{
+					//We assign weights according to the exits
 					if (op[j] < 12)	dist.push_back(12);
 					else if (op[j] < 16)	dist.push_back(6);
 					else	dist.push_back(1);
@@ -74,7 +76,6 @@ void AGameMaster::StartGeneration()
 			GenerarActor(Generator.GetBlock(Point.first, Point.second), Point.first, Point.second);
 	}
 	//We generate the houses
-	//TODO search for roads and all adjacent empties; then start a globe on them
 	int group = 0;
 	for (int i = 0; i < Height; i++)
 	{
@@ -99,6 +100,22 @@ void AGameMaster::StartGeneration()
 		ABaseBlock* actor = Actualizar.front();
 		Actualizar.pop();
 		ActualizarActor(actor, actor->GetActorTransform().GetLocation().X/ GridToCoordMult, actor->GetActorTransform().GetLocation().Y/ GridToCoordMult);
+	}
+	//We generate NPCs in the world
+	//TODO limit to a maximum of 30X30 NPCs
+	for (int i = 0; i < Height; i++)
+	{
+		for (int j = 0; j < Width; j++)
+		{
+			const FVector Location = { StaticCast<float>(i * GridToCoordMult), StaticCast<float>(j * GridToCoordMult), 250.0 };
+			const FRotator Rotation = GetActorRotation();
+			ABasicNPC* actor = GetWorld()->SpawnActor<ABasicNPC>(NPCToSpawn, Location, Rotation);
+			actor->AddWaypoint({ StaticCast<float>((i+1) * GridToCoordMult), StaticCast<float>(j * GridToCoordMult), 250.0 });
+			actor->AddWaypoint({ StaticCast<float>(i * GridToCoordMult), StaticCast<float>((j+1) * GridToCoordMult), 250.0 });
+			actor->AddWaypoint({ StaticCast<float>((i + 1) * GridToCoordMult), StaticCast<float>((j+1) * GridToCoordMult), 250.0 });
+			actor->jugador = jugador;
+			actor->PointReached();
+		}
 	}
 }
 
@@ -141,6 +158,7 @@ void AGameMaster::GenerarActor(Block ChosenRoad, int XPosition, int YPosition)
 	const FVector Location = {StaticCast<float>(XPosition * GridToCoordMult), StaticCast<float>(YPosition * GridToCoordMult), 10.0};
 	const FRotator Rotation = GetActorRotation();
 	ABaseBlock* actor = GetWorld()->SpawnActor<ABaseBlock>(ActorToSpawn, Location, Rotation);
+	Generator.AddAgent(XPosition, YPosition, actor);
 	if(ChosenRoad == Block::BUILDING)
 		Actualizar.push(actor);
 	else
