@@ -113,6 +113,8 @@ private:
 
 	bool RoadInDirection(Block road, Direction direction);
 
+	
+
 	/**
 	* Function used to attain the Array position of a 2D position
 	* @param Columna : The X Position ->

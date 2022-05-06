@@ -103,18 +103,22 @@ void AGameMaster::StartGeneration()
 	}
 	//We generate NPCs in the world
 	//TODO limit to a maximum of 30X30 NPCs
-	for (int i = 0; i < Height; i++)
+	for (int i = -RadiusOfSpawn; i < RadiusOfSpawn; i+= GridToCoordMult)
 	{
-		for (int j = 0; j < Width; j++)
+		for (int j = -RadiusOfSpawn; j < RadiusOfSpawn; j+= GridToCoordMult)
 		{
-			const FVector Location = { StaticCast<float>(i * GridToCoordMult), StaticCast<float>(j * GridToCoordMult), 250.0 };
-			const FRotator Rotation = GetActorRotation();
-			ABasicNPC* actor = GetWorld()->SpawnActor<ABasicNPC>(NPCToSpawn, Location, Rotation);
-			actor->AddWaypoint({ StaticCast<float>((i+1) * GridToCoordMult), StaticCast<float>(j * GridToCoordMult), 250.0 });
-			actor->AddWaypoint({ StaticCast<float>(i * GridToCoordMult), StaticCast<float>((j+1) * GridToCoordMult), 250.0 });
-			actor->AddWaypoint({ StaticCast<float>((i + 1) * GridToCoordMult), StaticCast<float>((j+1) * GridToCoordMult), 250.0 });
-			actor->jugador = jugador;
-			actor->PointReached();
+			const FVector Location = { StaticCast<float>(i + jugador->GetActorLocation().X), StaticCast<float>(j + jugador->GetActorLocation().Y), 250.0 };
+			if (!(i == 0 && j == 0) && FVector::Distance(Location, jugador->GetActorLocation()) < RadiusOfSpawn)
+			{
+				
+				const FRotator Rotation = GetActorRotation();
+				ABasicNPC* actor = GetWorld()->SpawnActor<ABasicNPC>(NPCToSpawn, Location, Rotation);
+				actor->AddWaypoint({ StaticCast<float>(i+ GridToCoordMult), StaticCast<float>(j), 250.0 });
+				actor->AddWaypoint({ StaticCast<float>(i), StaticCast<float>(j + GridToCoordMult), 250.0 });
+				actor->AddWaypoint({ StaticCast<float>(i + GridToCoordMult), StaticCast<float>(j + GridToCoordMult), 250.0 });
+				actor->jugador = jugador;
+				actor->PointReached();
+			}
 		}
 	}
 }
@@ -127,7 +131,7 @@ void AGameMaster::GroupHouses(int X, int Y, int group, bool park)
 	int groupSize = AverageGroup + modifier;
 	std::stack<std::pair<int,int>> posibilidades;
 	int iterator = 0;
-	std::discrete_distribution<int> alt({ 2.5,5,10,8,6,4,2,1 });
+	std::discrete_distribution<int> alt({ 1.25,2.5,5,10,20,10,5,2.5,1.5,1,0.8,0.6,0.4,0.2,0.1 });
 	int height = alt(generator);
 	posibilidades.push(std::pair<int,int>{ X,Y });
 	//Iterative recursion

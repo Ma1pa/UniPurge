@@ -48,6 +48,8 @@ private:
 
 	std::queue<ABaseBlock*> Actualizar;
 
+	int RadiusOfSpawn = 4800;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -60,8 +62,6 @@ protected:
 
 public:	
 	
-
-	static const int GridToCoordMult = 800;
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

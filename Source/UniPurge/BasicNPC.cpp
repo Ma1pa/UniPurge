@@ -3,6 +3,7 @@
 
 #include "BasicNPC.h"
 
+
 // Sets default values
 ABasicNPC::ABasicNPC()
 {
@@ -10,7 +11,7 @@ ABasicNPC::ABasicNPC()
 	PrimaryActorTick.bCanEverTick = true;
 	currentWaypoint = 0;
 	disabled = false;
-	MaxDistance = 7500.0f;
+	MaxDistance = 4800.0f;
 
 }
 
@@ -25,33 +26,22 @@ void ABasicNPC::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//sumDelta += DeltaTime;
-	//if (sumDelta >= 1.0f)
-	//{
-		sumDelta -= 1.0f;
-		if (!disabled && GetDistanceTo(jugador) >= MaxDistance)
-		{
-			disabled = true;
-			//Disable AI and other components
-			// Hides visible components
-			SetActorHiddenInGame(true);
-
-			// Disables collision components
-			SetActorEnableCollision(false);
-		}
-		else if (disabled && GetDistanceTo(jugador) < MaxDistance)
-		{
-			//TODO Move the NPC to an empty "home" and activate it
-			disabled = false;
-			//Enable AI and other components
-			// Hides visible components
-			SetActorHiddenInGame(false);
-
-			// Disables collision components
-			SetActorEnableCollision(true);
-			PointReached();
-		}
-	//}
+	FVector pos = { GetActorLocation().X,GetActorLocation().Y,0 };
+	FVector otro = { jugador->GetActorLocation().X,jugador->GetActorLocation().Y,0 };
+	if (FVector::Distance(pos,otro) > MaxDistance)
+	{
+		//The operation wanted is otro-pos; which turns into otro - pos
+		//To move them a bit inwards to avoid permastuck, we reduce the radius a bit so we add |pos|/pos
+		FVector destino = { ((otro.X * 2) - pos.X) + (abs(pos.X - otro.X)/(pos.X - otro.X)) * 200, (otro.Y * 2) - pos.Y + (abs(pos.Y - otro.Y) / (pos.Y - otro.Y)) * 200, 250.0};
+		SetActorLocation(destino);
+		//Update the objectives according to the block assigned (closest tile)
+		ListOfObjectives.Empty();
+		AddWaypoint({ (destino.X + GridToCoordMult -200), destino.Y - 200, 250.0 });
+		AddWaypoint({ destino.X - 200, (destino.Y + GridToCoordMult - 200), 250.0 });
+		AddWaypoint({ (destino.X + GridToCoordMult - 200), (destino.Y + GridToCoordMult - 200), 250.0 });
+		PointReached();
+	
+	}
 
 }
 

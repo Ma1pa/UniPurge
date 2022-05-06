@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include <UniPurge/UniPurgeCharacter.h>
+#include <UniPurge/Enums.h>
 
 #include "BasicNPC.generated.h"
 
