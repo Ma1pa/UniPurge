@@ -47,22 +47,13 @@ void ABasicNPC::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FVector pos = { GetActorLocation().X,GetActorLocation().Y,0 };
-	FVector otro = { jugador->GetActorLocation().X,jugador->GetActorLocation().Y,0 };
+	//FVector pos = { GetActorLocation().X,GetActorLocation().Y,0 };
+	//FVector otro = { jugador->GetActorLocation().X,jugador->GetActorLocation().Y,0 };
 	if (generador->IsFarAway(position, jugador->GetActorLocation()))
 	{
-		//OLD: FVector::Distance(pos,otro) > MaxDistance
-		//The operation wanted is otro-pos; which turns into otro - pos
-		//To move them a bit inwards to avoid permastuck, we reduce the radius a bit so we add |pos|/pos
-		//FVector destino = { ((otro.X * 2) - pos.X) + (abs(pos.X - otro.X)/(pos.X - otro.X)) * 200, (otro.Y * 2) - pos.Y + (abs(pos.Y - otro.Y) / (pos.Y - otro.Y)) * 200, 250.0};
-		//Store the position on the corresponding tile
 		generador->StorePosition(position, FVector{ GetActorLocation().X,GetActorLocation().Y,250.0f });
-		
-		position = generador->GetOppositeTile(position, jugador->GetActorLocation());
-		SetActorLocation(generador->RetrievePosition(position));
-		//Update the objectives according to the block assigned (closest tile)
-		UpdatePatrol();
-	
+		generador->GetOppositeTile(position, jugador->GetActorLocation());
+		Destroy();
 	}
 
 }

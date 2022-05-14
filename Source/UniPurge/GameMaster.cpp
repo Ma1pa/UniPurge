@@ -14,8 +14,12 @@ AGameMaster::AGameMaster()
 	PrimaryActorTick.bCanEverTick = true;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
 	RootComponent = StaticMesh;
-	Generator = WorldGenerator(1, Height, Width);
-	generator.seed(std::rand());
+	
+	
+	seed = std::rand();
+	generator.seed(seed);
+	WorldGenerator Gen = WorldGenerator();
+	Generator = &Gen;
 	//generator.seed(1);
 }
 
@@ -23,42 +27,44 @@ AGameMaster::AGameMaster()
 void AGameMaster::BeginPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Inicio Juego"));
-	(&Generator)->~WorldGenerator();   //call the destructor explicitly
-	new (&Generator) WorldGenerator(1, Height, Width);
+	//(Generator)->~WorldGenerator();   //call the destructor explicitly
+	Generator = new WorldGenerator(seed, Side, this);
+	
 	Super::BeginPlay();
 	StartGeneration();
+	Generator->Side = Side;
 }
 
 void AGameMaster::StartGeneration()
 {
-	jugador->SetActorLocation(FVector{ StaticCast<float>(Height/2) * GridToCoordMult, StaticCast<float>(Width/2) * GridToCoordMult,250.0f });
-	Generator.currentPlayerTile = Height / 2 * Width + Width / 2;
+	jugador->SetActorLocation(FVector{ StaticCast<float>(Side /2) * GridToCoordMult, StaticCast<float>(Side /2) * GridToCoordMult,250.0f });
+	Generator->currentPlayerTile = Side / 2 * Side + Side / 2;
 	//We generate the roads
-	for (int i = 0; i < Height * Width; i++) 
+	for (int i = 0; i < Side * Side; i++)
 	{
-		std::pair<int, int> Point = Generator.GetLessEntropy();
+		std::pair<int, int> Point = Generator->GetLessEntropy();
 		UE_LOG(LogTemp, Warning, TEXT("Position (%d, %d)"), Point.first, Point.second);
 		//We chose if we put empty or not 50%
 		std::discrete_distribution<int> var({1,0.3});
 		int option = var(generator);
 		//int option = 0;
 		//Check if an empty is possible
-		if (option == 1 && Generator.CanEmpty(Point.first, Point.second))
+		if (option == 1 && Generator->CanEmpty(Point.first, Point.second))
 		{
-			Generator.CollapseOptions(Point.first, Point.second, 1);
+			Generator->CollapseOptions(Point.first, Point.second, 1);
 		}
 		else
 		{
-			if (Generator.GetPosibilities(Point.first, Point.second) <= 0) 
+			if (Generator->GetPosibilities(Point.first, Point.second) <= 0)
 			{
-				Generator.CollapseList(Point.first, Point.second, -1); 
+				Generator->CollapseList(Point.first, Point.second, -1);
 				UE_LOG(LogTemp, Warning, TEXT("No options left"));
 			}
 			else
 			{
 				std::vector<int> dist;
-				std::vector<int> op = Generator.GetOptions(Point.first, Point.second);
-				for (int j = 0; j < Generator.GetPosibilities(Point.first, Point.second); j++)
+				std::vector<int> op = Generator->GetOptions(Point.first, Point.second);
+				for (int j = 0; j < Generator->GetPosibilities(Point.first, Point.second); j++)
 				{
 					//We assign weights according to the exits
 					if (op[j] < 12)	dist.push_back(12);
@@ -67,41 +73,41 @@ void AGameMaster::StartGeneration()
 				}
 				std::discrete_distribution<int> distribution (std::begin(dist), std::end(dist));
 				option = distribution(generator);
-				Generator.CollapseList(Point.first, Point.second, option);
+				Generator->CollapseList(Point.first, Point.second, option);
 			}
 		}
 		
-		UE_LOG(LogTemp, Warning, TEXT("Block = %d"), (int)Generator.GetBlock(Point.first, Point.second));
+		UE_LOG(LogTemp, Warning, TEXT("Block = %d"), (int)Generator->GetBlock(Point.first, Point.second));
 		//Old spawning implementation with blueprints
 		//SpawnActor(Generator.GetBlock(Point.first, Point.second), Point.first * GridToCoordMult, Point.second * GridToCoordMult);
-		if(Generator.GetBlock(Point.first, Point.second) != Block::EMPTY)
-			GenerarActor(Generator.GetBlock(Point.first, Point.second), Point.first, Point.second);
+		if(Generator->GetBlock(Point.first, Point.second) != Block::EMPTY)
+			GenerarActor(Generator->GetBlock(Point.first, Point.second), Point.first, Point.second);
 
 		//Generate places to place NPCs and their waypoints
-		int X = (int)(i / Width) * GridToCoordMult;
-		int Y = (int)(i % Width) * GridToCoordMult;
-		Generator.StorePosition(i, FVector{ StaticCast<float>(X), StaticCast<float>(Y), 250.0f });
+		int X = (int)(i / Side) * GridToCoordMult;
+		int Y = (int)(i % Side) * GridToCoordMult;
+		Generator->StorePosition(i, FVector{ StaticCast<float>(X), StaticCast<float>(Y), 250.0f });
 		FVector puntos[4] = {
 					{StaticCast<float>(X),StaticCast<float>(Y),250.0f},
 					{StaticCast<float>(X + 4 * GridToCoordMult),StaticCast<float>(Y),250.0f},
 					{StaticCast<float>(X),StaticCast<float>(Y + 4 * GridToCoordMult),250.0f},
 					{StaticCast<float>(X - 4 * GridToCoordMult),StaticCast<float>(Y),250.0f} };
-		Generator.SetWaypoints((int)(i / Width), i%Width, puntos);
+		Generator->SetWaypoints((int)(i / Side), i% Side, puntos);
 	}
 	//We generate the houses
 	int group = 0;
-	for (int i = 0; i < Height; i++)
+	for (int i = 0; i < Side; i++)
 	{
-		for(int j = 0; j < Width; j++)
+		for(int j = 0; j < Side; j++)
 			//If we find a road
-		if (Generator.GetBlock(i, j) > Block::EMPTY && Generator.GetBlock(i, j) < Block::BUILDING)
+		if (Generator->GetBlock(i, j) > Block::EMPTY && Generator->GetBlock(i, j) < Block::BUILDING)
 		{
 			std::discrete_distribution<int> ProbParque({ 2,0.5 });
 			//We search the adjacent blocks. And if any of them is empty, generate a building and start generating a group
-			if (i < Height - 1	&& Generator.GetBlock(i + 1, j) == Block::EMPTY && Generator.GetGroup(i + 1, j) == -1)	GroupHouses(i + 1, j, group++, ProbParque(generator) == 1);
-			if (i > 0			&& Generator.GetBlock(i - 1, j) == Block::EMPTY && Generator.GetGroup(i - 1, j) == -1)	GroupHouses(i - 1, j, group++, ProbParque(generator) == 1);
-			if (j < Width - 1	&& Generator.GetBlock(i, j + 1) == Block::EMPTY && Generator.GetGroup(i, j + 1) == -1)	GroupHouses(i, j + 1, group++, ProbParque(generator) == 1);
-			if (j > 0			&& Generator.GetBlock(i, j - 1) == Block::EMPTY && Generator.GetGroup(i, j - 1) == -1)	GroupHouses(i, j - 1, group++, ProbParque(generator) == 1);
+			if (i < Side - 1	&& Generator->GetBlock(i + 1, j) == Block::EMPTY && Generator->GetGroup(i + 1, j) == -1)	GroupHouses(i + 1, j, group++, ProbParque(generator) == 1);
+			if (i > 0			&& Generator->GetBlock(i - 1, j) == Block::EMPTY && Generator->GetGroup(i - 1, j) == -1)	GroupHouses(i - 1, j, group++, ProbParque(generator) == 1);
+			if (j < Side - 1	&& Generator->GetBlock(i, j + 1) == Block::EMPTY && Generator->GetGroup(i, j + 1) == -1)	GroupHouses(i, j + 1, group++, ProbParque(generator) == 1);
+			if (j > 0			&& Generator->GetBlock(i, j - 1) == Block::EMPTY && Generator->GetGroup(i, j - 1) == -1)	GroupHouses(i, j - 1, group++, ProbParque(generator) == 1);
 			
 			//Old spawning implementation with blueprints
 			//SpawnActor(Generator.GetBlock(i, j), i * GridToCoordMult, j * GridToCoordMult);	
@@ -122,14 +128,10 @@ void AGameMaster::StartGeneration()
 		{
 			//Modify so that they only spawn at secure zones (in the grid)
 			const FVector Location = { StaticCast<float>(i + jugador->GetActorLocation().X), StaticCast<float>(j + jugador->GetActorLocation().Y), 250.0 };
-			int punto = round((Location.X + 200) / GridToCoordMult) * Width + round((Location.Y + 200) / GridToCoordMult);
-			if (!(i == 0 && j == 0) && !Generator.IsFarAway(punto, jugador->GetActorLocation()))
+			int punto = round((Location.X + 200) / GridToCoordMult) * Side + round((Location.Y + 200) / GridToCoordMult);
+			if (!(i == 0 && j == 0) && !Generator->IsFarAway(punto, jugador->GetActorLocation()))
 			{
-				const FRotator Rotation = GetActorRotation();
-				ABasicNPC* actor = GetWorld()->SpawnActor<ABasicNPC>(NPCToSpawn, Location, Rotation);
-				actor->Iniciar(&Generator, punto);
-				actor->jugador = jugador;
-				actor->UpdatePatrol();
+				GenerarNPC(punto, Location);
 			}
 		}
 	}
@@ -144,20 +146,20 @@ void AGameMaster::GroupHouses(int X, int Y, int group, bool park)
 	std::stack<std::pair<int,int>> posibilidades;
 	int iterator = 0;
 	std::discrete_distribution<int> alt({ 1.25,2.5,5,10,20,10,5,2.5,1.5,1,0.8,0.6,0.4,0.2,0.1 });
-	int height = alt(generator);
+	int altura = alt(generator);
 	posibilidades.push(std::pair<int,int>{ X,Y });
 	//Iterative recursion
 	while (iterator++ < groupSize && !posibilidades.empty())
 	{
 		std::pair<int, int> actual = posibilidades.top();
 		posibilidades.pop();
-		Generator.CreateHoses(actual.first, actual.second, group, height, park);
-		GenerarActor(Generator.GetBlock(actual.first, actual.second), actual.first, actual.second);
+		Generator->CreateHoses(actual.first, actual.second, group, altura, park);
+		GenerarActor(Generator->GetBlock(actual.first, actual.second), actual.first, actual.second);
 		//Check the sides
-		if (actual.first < Height-1	&& Generator.GetBlock(actual.first + 1, actual.second) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first + 1, actual.second });
-		if (actual.first > 0		&& Generator.GetBlock(actual.first - 1, actual.second) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first - 1, actual.second });
-		if (actual.second < Width-1 && Generator.GetBlock(actual.first, actual.second + 1) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first, actual.second + 1 });
-		if (actual.second > 0		&& Generator.GetBlock(actual.first, actual.second - 1) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first, actual.second - 1 });
+		if (actual.first < Side -1	&& Generator->GetBlock(actual.first + 1, actual.second) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first + 1, actual.second });
+		if (actual.first > 0		&& Generator->GetBlock(actual.first - 1, actual.second) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first - 1, actual.second });
+		if (actual.second < Side -1 && Generator->GetBlock(actual.first, actual.second + 1) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first, actual.second + 1 });
+		if (actual.second > 0		&& Generator->GetBlock(actual.first, actual.second - 1) == Block::EMPTY)	posibilidades.push(std::pair<int, int>{ actual.first, actual.second - 1 });
 		
 	}
 }
@@ -174,27 +176,37 @@ void AGameMaster::GenerarActor(Block ChosenRoad, int XPosition, int YPosition)
 	const FVector Location = {StaticCast<float>(XPosition * GridToCoordMult), StaticCast<float>(YPosition * GridToCoordMult), 10.0};
 	const FRotator Rotation = GetActorRotation();
 	ABaseBlock* actor = GetWorld()->SpawnActor<ABaseBlock>(ActorToSpawn, Location, Rotation);
-	Generator.AddAgent(XPosition, YPosition, actor);
+	Generator->AddAgent(XPosition, YPosition, actor);
 	if(ChosenRoad == Block::BUILDING)
 		Actualizar.push(actor);
 	else
-		actor->SetStats(ChosenRoad, Generator.GetHeight(XPosition, YPosition));
+		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition));
 }
 
 void AGameMaster::ActualizarActor(ABaseBlock* actor, int X, int Y)
 {
 	
-	int group = Generator.GetGroup(X, Y);
+	int group = Generator->GetGroup(X, Y);
 	actor->toggleFloor();
-	actor->SetNewExits(	Generator.CompareGroup(X + 1, Y, group),
-						Generator.CompareGroup(X, Y + 1, group),
-						Generator.CompareGroup(X - 1, Y, group),
-						Generator.CompareGroup(X, Y - 1, group));
-	actor->SetStats(Generator.GetBlock(X, Y), Generator.GetHeight(X, Y));
+	actor->SetNewExits(	Generator->CompareGroup(X + 1, Y, group),
+						Generator->CompareGroup(X, Y + 1, group),
+						Generator->CompareGroup(X - 1, Y, group),
+						Generator->CompareGroup(X, Y - 1, group));
+	actor->SetStats(Generator->GetBlock(X, Y), Generator->GetHeight(X, Y));
 	
 	actor->UpdateBuilding();
 }
 
-//Old spawning implementation with blueprints
-//void AGameMaster::SpawnActor_Implementation(Block ChosenRoad, int XPosition, int YPosition) {}
+void AGameMaster::SpawnDirection(int position)
+{
+	GenerarNPC(position, Generator->RetrievePosition(position));
+}
 
+void AGameMaster::GenerarNPC(int puntoSpawn, FVector Posicion)
+{
+	const FRotator Rotation = GetActorRotation();
+	ABasicNPC* actor = GetWorld()->SpawnActor<ABasicNPC>(NPCToSpawn, Posicion, Rotation);
+	actor->Iniciar(Generator, puntoSpawn);
+	actor->jugador = jugador;
+	actor->UpdatePatrol();
+}

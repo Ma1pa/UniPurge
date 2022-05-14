@@ -6,7 +6,7 @@
 #include "GameFramework/Character.h"
 #include <UniPurge/UniPurgeCharacter.h>
 #include <UniPurge/Enums.h>
-#include <UniPurge/WorldGenerator.h>
+#include <UniPurge/GameMaster.h>
 
 #include "BasicNPC.generated.h"
 

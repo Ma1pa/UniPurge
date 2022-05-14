@@ -1,17 +1,16 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "WorldGenerator.h"
+#include "GameMaster.h"
 
 WorldGenerator::WorldGenerator(){};
-WorldGenerator::WorldGenerator(int S, int H, int W)
+WorldGenerator::WorldGenerator(int S, int H, AGameMaster* mast)
 {
 	//TODO Obtener todos los bojetos que se pueden generar
-
-	Height = H;
-	Width = W;
+	master = mast;
+	Side = H;
 	Seed = S;
-	for (int i = 0; i < Width * Height; i++) 
+	for (int i = 0; i < Side * Side; i++)
 	{
 		TileMap.push_back(Tile());
 		TileMap[i].Location = i;
@@ -53,11 +52,11 @@ void WorldGenerator::CollapseList(int X, int Y, int chosen)
 	{
 		//There are no options left; so we search for any of the no exit routes
 		//North
-		if (X < (Height - 1) && RoadInDirection(TileMap[get_1d(X + 1, Y)].block, Direction::SOUTH))	CollapseOptions(X, Y, 2);
+		if (X < (Side - 1) && RoadInDirection(TileMap[get_1d(X + 1, Y)].block, Direction::SOUTH))	CollapseOptions(X, Y, 2);
 		//South
 		else if (X > 0 && RoadInDirection(TileMap[get_1d(X - 1, Y)].block, Direction::NORTH))	CollapseOptions(X, Y, 3);
 		//East
-		else if (Y < (Width - 1) && RoadInDirection(TileMap[get_1d(X, Y + 1)].block, Direction::WEST))	CollapseOptions(X, Y, 4);
+		else if (Y < (Side - 1) && RoadInDirection(TileMap[get_1d(X, Y + 1)].block, Direction::WEST))	CollapseOptions(X, Y, 4);
 		//West
 		else if (Y > 0 && RoadInDirection(TileMap[get_1d(X, Y - 1)].block, Direction::EAST))	CollapseOptions(X, Y, 5);
 	}
@@ -73,7 +72,7 @@ std::vector<int> WorldGenerator::GetOptions(int X, int Y)
 int WorldGenerator::CompareGroup(int X, int Y, int group)
 {
 	//The point is not in the tilemap
-	if (X < 0 || Y < 0 || X >= Width || Y >= Height)	return 0;
+	if (X < 0 || Y < 0 || X >= Side || Y >= Side)	return 0;
 	//The point is in the tilemap
 	if (TileMap[get_1d(X, Y)].block != Block::BUILDING && TileMap[get_1d(X, Y)].block > Block::EMPTY)	return 1;
 	if (TileMap[get_1d(X, Y)].group == group)	return 2;
@@ -162,9 +161,9 @@ void WorldGenerator::RecursivePropagation(int X, int Y, Direction MovementFromRe
 
 bool WorldGenerator::CheckSpots(int X, int Y)
 {
-	if (X < (Height - 1) && RoadInDirection(TileMap[get_1d(X + 1, Y)].block, Direction::SOUTH))	return true;
+	if (X < (Side - 1) && RoadInDirection(TileMap[get_1d(X + 1, Y)].block, Direction::SOUTH))	return true;
 	if (X > 0 &&			RoadInDirection(TileMap[get_1d(X-1, Y)].block, Direction::NORTH))	return true;
-	if (Y < (Width - 1) &&	RoadInDirection(TileMap[get_1d(X, Y+1)].block, Direction::WEST))	return true;
+	if (Y < (Side - 1) &&	RoadInDirection(TileMap[get_1d(X, Y+1)].block, Direction::WEST))	return true;
 	if (Y > 0 &&			RoadInDirection(TileMap[get_1d(X, Y-1)].block, Direction::EAST))	return true;
 	return false;
 }
@@ -172,11 +171,11 @@ bool WorldGenerator::CheckSpots(int X, int Y)
 void WorldGenerator::CallSides(int X, int Y, int block)
 {
 	//Call to north
-	if (X < (Height - 1))	RecursivePropagation(X + 1, Y, Direction::NORTH, RoadInDirection(StaticCast<Block>(block), Direction::NORTH), block == 1);
+	if (X < (Side - 1))	RecursivePropagation(X + 1, Y, Direction::NORTH, RoadInDirection(StaticCast<Block>(block), Direction::NORTH), block == 1);
 	//Call to south
 	if (X > 0)	RecursivePropagation(X - 1, Y, Direction::SOUTH, RoadInDirection(StaticCast<Block>(block), Direction::SOUTH), block == 1);
 	//Call to east
-	if (Y < (Width - 1))	RecursivePropagation(X, Y + 1, Direction::EAST, RoadInDirection(StaticCast<Block>(block), Direction::EAST), block == 1);
+	if (Y < (Side - 1))	RecursivePropagation(X, Y + 1, Direction::EAST, RoadInDirection(StaticCast<Block>(block), Direction::EAST), block == 1);
 	//Call to west
 	if (Y > 0)	RecursivePropagation(X, Y - 1, Direction::WEST, RoadInDirection(StaticCast<Block>(block), Direction::WEST), block == 1);
 }
@@ -203,9 +202,10 @@ bool WorldGenerator::RoadInDirection(Block road, Direction direction)
 	}
 }
 
-int WorldGenerator::get_1d(int X, int Y)	{ return Y + Width * X; }
+int WorldGenerator::get_1d(int X, int Y)	{ return Y + Side * X; }
 
-std::pair<int, int> WorldGenerator::get_2d( int Pos){ return { (int)(Pos / Width), (int)(Pos % Width)}; }
+std::pair<int, int> WorldGenerator::get_2d( int Pos){
+	return { (int)(Pos / Side), (int)(Pos % Side)}; }
 
 Block WorldGenerator::GetBlock(int X, int Y)
 {
@@ -227,24 +227,26 @@ void WorldGenerator::AddAgent(int X, int Y, ABaseBlock* bloque)
 	TileMap[get_1d(X, Y)].agent = bloque;
 }
 
-int WorldGenerator::GetOppositeTile(int ogTile, FVector posPlayer)
+void WorldGenerator::GetOppositeTile(int ogTile, FVector posPlayer)
 {
-
+	TileMap[ogTile].spawned = false;
 	//We get which tile the player is on
 	//TODO Store the old position of the player and recalculate everytime a function is called; if the tile is different, change directions and act
 	std::pair<int, int> playerTile = { StaticCast<int>((posPlayer.X+400) / 800), StaticCast<int>((posPlayer.Y+400) / 800) };
-	UE_LOG(LogTemp, Warning, TEXT("Player is in (%d, %d)"), playerTile.first, playerTile.second);
+	//UE_LOG(LogTemp, Warning, TEXT("Player is in (%d, %d)"), playerTile.first, playerTile.second);
 	if (get_1d(playerTile.first, playerTile.second) != currentPlayerTile)
 	{
 		//Check if the player moved in one direction, two or to teleport everything (more than 2 dir)
 		//Check Up/Down X
 		int jug = get_1d(playerTile.first, playerTile.second);
-		if (jug - currentPlayerTile == Width)	playerLastMovement = Direction::NORTH;
-		else if (jug - currentPlayerTile == -Width) playerLastMovement = Direction::SOUTH;
+		if (jug - currentPlayerTile == Side)	playerLastMovement = Direction::NORTH;
+		else if (jug - currentPlayerTile == -Side) playerLastMovement = Direction::SOUTH;
 		else if (jug - currentPlayerTile == 1) playerLastMovement = Direction::EAST;
 		else if (jug - currentPlayerTile == -1) playerLastMovement = Direction::WEST;
 		currentPlayerTile = jug;
 	}
+
+	
 	std::pair<int, int> NPCTile = get_2d(ogTile);
 	std::pair<int, int> Destination = { NPCTile.first, NPCTile.second };
 	int multX = playerTile.first == NPCTile.first ? 1 : abs(NPCTile.first - playerTile.first) / (NPCTile.first - playerTile.first);
@@ -266,16 +268,11 @@ int WorldGenerator::GetOppositeTile(int ogTile, FVector posPlayer)
 	default:
 		break;
 	}
-
-	//UE_LOG(LogTemp, Warning, TEXT("I am in (%d, %d)"), NPCTile.first, NPCTile.second);
-	
-	
-	//std::pair<int, int> Destination = { ((playerTile.first * 2) - NPCTile.first) + multX, (playerTile.second * 2) - NPCTile.second + multY };
-	//UE_LOG(LogTemp, Warning, TEXT("I should go to (%d, %d)"), Destination.first, Destination.second);
-	////We return the tile on the opposite side
-	//if (Destination.first < 0 || Destination.second < 0 || Destination.first >= Width || Destination.second >= Height)	return ogTile;
-	return get_1d(Destination.first, Destination.second);
-	
+	if (!TileMap[get_1d(Destination.first, Destination.second)].spawned)
+	{
+		TileMap[get_1d(Destination.first, Destination.second)].spawned = true;
+		master->SpawnDirection(get_1d(Destination.first, Destination.second));
+	}
 }
 
 void WorldGenerator::SetWaypoints(int X, int Y, FVector Waypoints[4])
