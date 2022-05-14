@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <UniPurge/BaseBlock.h>
 
+class AGameMaster;
+
 struct Tile
 {
 	/* Location of the tile in the array representing the 2D grid*/
@@ -23,6 +25,10 @@ struct Tile
 	int height;
 	/* Agent of the tile */
 	ABaseBlock* agent;
+	/* The assigned checkpoints of the route */
+	FVector waypoints[4];
+	/* The stored position of the agent when leaving the zone*/
+	FVector agentPos;
 };
 
 /* Class used to generate the world in which the game takes place */
@@ -93,6 +99,21 @@ public:
 
 	void CreateHoses(int X, int Y, int group, int h, bool park);
 
+	int GetOppositeTile(int ogTile, FVector posPlayer);
+
+	void SetWaypoints(int X, int Y, FVector Waypoints[4]);
+
+	FVector* GetWaypoints(int position);
+
+	void StorePosition(int position, FVector pos);
+
+	FVector RetrievePosition(int position);
+
+	bool IsFarAway(int position, FVector JPos);
+
+	int currentPlayerTile;
+	Direction playerLastMovement;
+
 protected:
 	/* Tile map used to guide generation */
 	std::vector<Tile> TileMap;
@@ -117,11 +138,11 @@ private:
 
 	/**
 	* Function used to attain the Array position of a 2D position
-	* @param Columna : The X Position ->
-	* @param Fila : The Y Position ^
+	* @param Columna : The X Position ^
+	* @param Fila : The Y Position ->
 	* @return Number indicating the location in the list
 	*/
-	int get_1d(int Columna, int Fila);
+	int get_1d(int X, int Y);
 	/**
 	* Function used to attain the 2D position from the Array
 	* @param Point : The position in the array

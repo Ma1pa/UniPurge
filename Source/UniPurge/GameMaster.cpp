@@ -31,6 +31,8 @@ void AGameMaster::BeginPlay()
 
 void AGameMaster::StartGeneration()
 {
+	jugador->SetActorLocation(FVector{ StaticCast<float>(Height/2) * GridToCoordMult, StaticCast<float>(Width/2) * GridToCoordMult,250.0f });
+	Generator.currentPlayerTile = Height / 2 * Width + Width / 2;
 	//We generate the roads
 	for (int i = 0; i < Height * Width; i++) 
 	{
@@ -74,6 +76,17 @@ void AGameMaster::StartGeneration()
 		//SpawnActor(Generator.GetBlock(Point.first, Point.second), Point.first * GridToCoordMult, Point.second * GridToCoordMult);
 		if(Generator.GetBlock(Point.first, Point.second) != Block::EMPTY)
 			GenerarActor(Generator.GetBlock(Point.first, Point.second), Point.first, Point.second);
+
+		//Generate places to place NPCs and their waypoints
+		int X = (int)(i / Width) * GridToCoordMult;
+		int Y = (int)(i % Width) * GridToCoordMult;
+		Generator.StorePosition(i, FVector{ StaticCast<float>(X), StaticCast<float>(Y), 250.0f });
+		FVector puntos[4] = {
+					{StaticCast<float>(X),StaticCast<float>(Y),250.0f},
+					{StaticCast<float>(X + 4 * GridToCoordMult),StaticCast<float>(Y),250.0f},
+					{StaticCast<float>(X),StaticCast<float>(Y + 4 * GridToCoordMult),250.0f},
+					{StaticCast<float>(X - 4 * GridToCoordMult),StaticCast<float>(Y),250.0f} };
+		Generator.SetWaypoints((int)(i / Width), i%Width, puntos);
 	}
 	//We generate the houses
 	int group = 0;
@@ -107,17 +120,16 @@ void AGameMaster::StartGeneration()
 	{
 		for (int j = -RadiusOfSpawn; j < RadiusOfSpawn; j+= GridToCoordMult)
 		{
+			//Modify so that they only spawn at secure zones (in the grid)
 			const FVector Location = { StaticCast<float>(i + jugador->GetActorLocation().X), StaticCast<float>(j + jugador->GetActorLocation().Y), 250.0 };
-			if (!(i == 0 && j == 0) && FVector::Distance(Location, jugador->GetActorLocation()) < RadiusOfSpawn)
+			int punto = round((Location.X + 200) / GridToCoordMult) * Width + round((Location.Y + 200) / GridToCoordMult);
+			if (!(i == 0 && j == 0) && !Generator.IsFarAway(punto, jugador->GetActorLocation()))
 			{
-				
 				const FRotator Rotation = GetActorRotation();
 				ABasicNPC* actor = GetWorld()->SpawnActor<ABasicNPC>(NPCToSpawn, Location, Rotation);
-				actor->AddWaypoint({ StaticCast<float>(i+ GridToCoordMult), StaticCast<float>(j), 250.0 });
-				actor->AddWaypoint({ StaticCast<float>(i), StaticCast<float>(j + GridToCoordMult), 250.0 });
-				actor->AddWaypoint({ StaticCast<float>(i + GridToCoordMult), StaticCast<float>(j + GridToCoordMult), 250.0 });
+				actor->Iniciar(&Generator, punto);
 				actor->jugador = jugador;
-				actor->PointReached();
+				actor->UpdatePatrol();
 			}
 		}
 	}

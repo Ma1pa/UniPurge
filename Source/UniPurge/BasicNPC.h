@@ -6,8 +6,11 @@
 #include "GameFramework/Character.h"
 #include <UniPurge/UniPurgeCharacter.h>
 #include <UniPurge/Enums.h>
+#include <UniPurge/WorldGenerator.h>
 
 #include "BasicNPC.generated.h"
+
+
 
 
 UCLASS()
@@ -22,6 +25,10 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Navver", BlueprintReadWrite)
 		TArray<FVector> ListOfObjectives;
 
+	void Iniciar(WorldGenerator* gen, int tile);
+
+	void UpdatePatrol();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -33,15 +40,13 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	void AddWaypoint(FVector vector);
-
 	UFUNCTION(BlueprintCallable)
-		void PointReached();
+		void PointReached(bool isDefined);
 
 	UFUNCTION(BlueprintNativeEvent)
 		void EmpezarNavegar();
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Navver")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Navver")
 		/*Destination the character wants to reach*/
 		FVector Destination;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Navver")
@@ -49,14 +54,22 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Optimizer")
 		float MaxDistance;
+	UPROPERTY(EditAnywhere, Category = "Navver")
+	int position;
 
 private:
+
+	WorldGenerator * generador;
 
 	int currentWaypoint;
 
 	bool disabled;
 
 	float sumDelta;
+
+	
+
+	
 
 	
 };

@@ -43,6 +43,7 @@ std::pair<int, int> WorldGenerator::GetLessEntropy()
 			TileMap[bestPosition].block != Block::NOTHING)
 			bestPosition = i;
 	}
+	UE_LOG(LogTemp, Warning, TEXT("Best Position = %d Block = %d"), bestPosition,(int)TileMap[bestPosition].block);
 	return get_2d(bestPosition);
 }
 
@@ -202,9 +203,9 @@ bool WorldGenerator::RoadInDirection(Block road, Direction direction)
 	}
 }
 
-int WorldGenerator::get_1d(int Columna, int Fila)	{ return Fila + Width * Columna ; }
+int WorldGenerator::get_1d(int X, int Y)	{ return Y + Width * X; }
 
-std::pair<int, int> WorldGenerator::get_2d( int Pos){ return { (int)(Pos / Width), Pos % Width}; }
+std::pair<int, int> WorldGenerator::get_2d( int Pos){ return { (int)(Pos / Width), (int)(Pos % Width)}; }
 
 Block WorldGenerator::GetBlock(int X, int Y)
 {
@@ -224,4 +225,91 @@ int WorldGenerator::GetPosibilities(int X, int Y)
 void WorldGenerator::AddAgent(int X, int Y, ABaseBlock* bloque)
 {
 	TileMap[get_1d(X, Y)].agent = bloque;
+}
+
+int WorldGenerator::GetOppositeTile(int ogTile, FVector posPlayer)
+{
+
+	//We get which tile the player is on
+	//TODO Store the old position of the player and recalculate everytime a function is called; if the tile is different, change directions and act
+	std::pair<int, int> playerTile = { StaticCast<int>((posPlayer.X+400) / 800), StaticCast<int>((posPlayer.Y+400) / 800) };
+	UE_LOG(LogTemp, Warning, TEXT("Player is in (%d, %d)"), playerTile.first, playerTile.second);
+	if (get_1d(playerTile.first, playerTile.second) != currentPlayerTile)
+	{
+		//Check if the player moved in one direction, two or to teleport everything (more than 2 dir)
+		//Check Up/Down X
+		int jug = get_1d(playerTile.first, playerTile.second);
+		if (jug - currentPlayerTile == Width)	playerLastMovement = Direction::NORTH;
+		else if (jug - currentPlayerTile == -Width) playerLastMovement = Direction::SOUTH;
+		else if (jug - currentPlayerTile == 1) playerLastMovement = Direction::EAST;
+		else if (jug - currentPlayerTile == -1) playerLastMovement = Direction::WEST;
+		currentPlayerTile = jug;
+	}
+	std::pair<int, int> NPCTile = get_2d(ogTile);
+	std::pair<int, int> Destination = { NPCTile.first, NPCTile.second };
+	int multX = playerTile.first == NPCTile.first ? 1 : abs(NPCTile.first - playerTile.first) / (NPCTile.first - playerTile.first);
+	int multY = playerTile.second == NPCTile.second ? 1 : abs(NPCTile.second - playerTile.second) / (NPCTile.second - playerTile.second);
+	switch (playerLastMovement)
+	{
+	case Direction::NORTH:
+		Destination.first = ((playerTile.first * 2) - NPCTile.first) + multX;
+		break;
+	case Direction::SOUTH:
+		Destination.first = ((playerTile.first * 2) - NPCTile.first) + multX;
+		break;
+	case Direction::EAST:
+		Destination.second = (playerTile.second * 2) - NPCTile.second + multY;
+		break;
+	case Direction::WEST:
+		Destination.second = (playerTile.second * 2) - NPCTile.second + multY;
+		break;
+	default:
+		break;
+	}
+
+	//UE_LOG(LogTemp, Warning, TEXT("I am in (%d, %d)"), NPCTile.first, NPCTile.second);
+	
+	
+	//std::pair<int, int> Destination = { ((playerTile.first * 2) - NPCTile.first) + multX, (playerTile.second * 2) - NPCTile.second + multY };
+	//UE_LOG(LogTemp, Warning, TEXT("I should go to (%d, %d)"), Destination.first, Destination.second);
+	////We return the tile on the opposite side
+	//if (Destination.first < 0 || Destination.second < 0 || Destination.first >= Width || Destination.second >= Height)	return ogTile;
+	return get_1d(Destination.first, Destination.second);
+	
+}
+
+void WorldGenerator::SetWaypoints(int X, int Y, FVector Waypoints[4])
+{
+	if (X < 0 || Y < 0)	return;
+	TileMap[get_1d(X, Y)].waypoints[0] = Waypoints[0];
+	TileMap[get_1d(X, Y)].waypoints[1] = Waypoints[1];
+	TileMap[get_1d(X, Y)].waypoints[2] = Waypoints[2];
+	TileMap[get_1d(X, Y)].waypoints[3] = Waypoints[3];
+}
+
+FVector* WorldGenerator::GetWaypoints(int position)
+{
+	if (position < 0)	return nullptr;
+	return TileMap[position].waypoints;
+}
+
+void WorldGenerator::StorePosition(int position, FVector pos)
+{
+	if (position < 0)	return;
+	TileMap[position].agentPos = pos;
+}
+
+FVector WorldGenerator::RetrievePosition(int position)
+{
+	if (position < 0)	return FVector{ -800,-800,250 };
+	return TileMap[position].agentPos;
+}
+
+bool WorldGenerator::IsFarAway(int position, FVector JPos)
+{
+	//We get which tile the player is on
+	std::pair<int, int> playerTile = { StaticCast<int>((JPos.X + 400) / 800), StaticCast<int>((JPos.Y + 400) / 800) };
+	std::pair<int, int> NPCTile = get_2d(position);
+	return abs(sqrt(pow(playerTile.first - NPCTile.first, 2) + pow(playerTile.second - NPCTile.second, 2))) > StaticCast <int>(4800/GridToCoordMult);
+
 }

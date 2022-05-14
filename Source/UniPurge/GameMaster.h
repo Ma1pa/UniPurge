@@ -37,6 +37,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Jugador")
 		AUniPurgeCharacter* jugador;
 
+	int RadiusOfSpawn = 4800;
+
 private:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
@@ -48,7 +50,7 @@ private:
 
 	std::queue<ABaseBlock*> Actualizar;
 
-	int RadiusOfSpawn = 4800;
+	
 
 protected:
 	// Called when the game starts or when spawned
