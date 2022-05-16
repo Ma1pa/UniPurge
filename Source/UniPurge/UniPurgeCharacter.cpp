@@ -10,6 +10,8 @@
 #include "GameFramework/SpringArmComponent.h"
 
 #include "DrawDebugHelpers.h"
+#include <Runtime/Engine/Classes/Kismet/GameplayStatics.h>
+#include <UniPurge/BasicNPC.h>
 
 #define PrintString(String) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::White, String)
 
@@ -81,7 +83,6 @@ void AUniPurgeCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AUniPurgeCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AUniPurgeCharacter::MoveRight);
-	PlayerInputComponent->BindAxis("DimensionShift", this, &AUniPurgeCharacter::DimensionShift);
 
 	// We have 2 versions of the rotation bindings to handle different kinds of devices differently
 	// "turn" handles devices that provide an absolute delta, such as a mouse.
@@ -91,8 +92,6 @@ void AUniPurgeCharacter::SetupPlayerInputComponent(class UInputComponent* Player
 	PlayerInputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 	PlayerInputComponent->BindAxis("LookUpRate", this, &AUniPurgeCharacter::LookUpAtRate);
 
-	// Set up menu key bindings
-	PlayerInputComponent->BindAction("Menu", IE_Pressed, this, &AUniPurgeCharacter::Menu);
 }
 
 void AUniPurgeCharacter::TurnAtRate(float Rate)
@@ -159,11 +158,6 @@ void AUniPurgeCharacter::MoveRight(float Value)
 	}
 }
 
-void AUniPurgeCharacter::DimensionShift(float Intensity)
-{
-	// TODO: Implementation of the Mechanic | Requires Implementation of the generation and modification systemsRequires Implementation of the generation and modification systems
-}
-
 void AUniPurgeCharacter::StartSprint()
 {
 	IsRunning = true;
@@ -193,11 +187,6 @@ void AUniPurgeCharacter::StopHide()
 	// TODO: Change animation to walking animations
 }
 
-void AUniPurgeCharacter::Menu()
-{
-	// TODO: If the InGame Menu is closed, Open the Menu
-	// TODO: If the InGame Menu is open, Close the Menu
-}
 
 FVector AUniPurgeCharacter::WallMovement(FVector DirectionOfMovement, bool Right)
 {

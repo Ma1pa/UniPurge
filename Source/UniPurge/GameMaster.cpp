@@ -28,7 +28,7 @@ void AGameMaster::BeginPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Inicio Juego"));
 	//(Generator)->~WorldGenerator();   //call the destructor explicitly
-	Generator = new WorldGenerator(seed, Side, this);
+	Generator = new WorldGenerator(StaticCast<int>(RadiusOfSpawn/GridToCoordMult), Side, this);
 	
 	Super::BeginPlay();
 	StartGeneration();
@@ -121,20 +121,7 @@ void AGameMaster::StartGeneration()
 		ActualizarActor(actor, actor->GetActorTransform().GetLocation().X/ GridToCoordMult, actor->GetActorTransform().GetLocation().Y/ GridToCoordMult);
 	}
 	//We generate NPCs in the world
-	//TODO limit to a maximum of 30X30 NPCs
-	for (int i = -RadiusOfSpawn; i < RadiusOfSpawn; i+= GridToCoordMult)
-	{
-		for (int j = -RadiusOfSpawn; j < RadiusOfSpawn; j+= GridToCoordMult)
-		{
-			//Modify so that they only spawn at secure zones (in the grid)
-			const FVector Location = { StaticCast<float>(i + jugador->GetActorLocation().X), StaticCast<float>(j + jugador->GetActorLocation().Y), 250.0 };
-			int punto = round((Location.X + 200) / GridToCoordMult) * Side + round((Location.Y + 200) / GridToCoordMult);
-			if (!(i == 0 && j == 0) && !Generator->IsFarAway(punto, jugador->GetActorLocation()))
-			{
-				GenerarNPC(punto, Location);
-			}
-		}
-	}
+	Generator->CheckPlayerPos(jugador);
 }
 
 void AGameMaster::GroupHouses(int X, int Y, int group, bool park)
@@ -168,7 +155,8 @@ void AGameMaster::GroupHouses(int X, int Y, int group, bool park)
 void AGameMaster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	if(!PlayerIsShifting)
+		Generator->CheckPlayerPos(jugador);
 }
 
 void AGameMaster::GenerarActor(Block ChosenRoad, int XPosition, int YPosition)
@@ -204,9 +192,16 @@ void AGameMaster::SpawnDirection(int position)
 
 void AGameMaster::GenerarNPC(int puntoSpawn, FVector Posicion)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Spawneando NPC"));
 	const FRotator Rotation = GetActorRotation();
 	ABasicNPC* actor = GetWorld()->SpawnActor<ABasicNPC>(NPCToSpawn, Posicion, Rotation);
 	actor->Iniciar(Generator, puntoSpawn);
 	actor->jugador = jugador;
 	actor->UpdatePatrol();
+	NPCsActivos.Add(actor);
+}
+
+void AGameMaster::RemoveActor(ABasicNPC* actor)
+{
+	NPCsActivos.Remove(actor);
 }

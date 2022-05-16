@@ -4,12 +4,13 @@
 #include "GameMaster.h"
 
 WorldGenerator::WorldGenerator(){};
-WorldGenerator::WorldGenerator(int S, int H, AGameMaster* mast)
+WorldGenerator::WorldGenerator(int RR, int H, AGameMaster* mast)
 {
 	//TODO Obtener todos los bojetos que se pueden generar
 	master = mast;
 	Side = H;
-	Seed = S;
+	RenderRadius = RR;
+	currentPlayerTile = 0;
 	for (int i = 0; i < Side * Side; i++)
 	{
 		TileMap.push_back(Tile());
@@ -202,6 +203,7 @@ bool WorldGenerator::RoadInDirection(Block road, Direction direction)
 	}
 }
 
+
 int WorldGenerator::get_1d(int X, int Y)	{ return Y + Side * X; }
 
 std::pair<int, int> WorldGenerator::get_2d( int Pos){
@@ -225,54 +227,6 @@ int WorldGenerator::GetPosibilities(int X, int Y)
 void WorldGenerator::AddAgent(int X, int Y, ABaseBlock* bloque)
 {
 	TileMap[get_1d(X, Y)].agent = bloque;
-}
-
-void WorldGenerator::GetOppositeTile(int ogTile, FVector posPlayer)
-{
-	TileMap[ogTile].spawned = false;
-	//We get which tile the player is on
-	//TODO Store the old position of the player and recalculate everytime a function is called; if the tile is different, change directions and act
-	std::pair<int, int> playerTile = { StaticCast<int>((posPlayer.X+400) / 800), StaticCast<int>((posPlayer.Y+400) / 800) };
-	//UE_LOG(LogTemp, Warning, TEXT("Player is in (%d, %d)"), playerTile.first, playerTile.second);
-	if (get_1d(playerTile.first, playerTile.second) != currentPlayerTile)
-	{
-		//Check if the player moved in one direction, two or to teleport everything (more than 2 dir)
-		//Check Up/Down X
-		int jug = get_1d(playerTile.first, playerTile.second);
-		if (jug - currentPlayerTile == Side)	playerLastMovement = Direction::NORTH;
-		else if (jug - currentPlayerTile == -Side) playerLastMovement = Direction::SOUTH;
-		else if (jug - currentPlayerTile == 1) playerLastMovement = Direction::EAST;
-		else if (jug - currentPlayerTile == -1) playerLastMovement = Direction::WEST;
-		currentPlayerTile = jug;
-	}
-
-	
-	std::pair<int, int> NPCTile = get_2d(ogTile);
-	std::pair<int, int> Destination = { NPCTile.first, NPCTile.second };
-	int multX = playerTile.first == NPCTile.first ? 1 : abs(NPCTile.first - playerTile.first) / (NPCTile.first - playerTile.first);
-	int multY = playerTile.second == NPCTile.second ? 1 : abs(NPCTile.second - playerTile.second) / (NPCTile.second - playerTile.second);
-	switch (playerLastMovement)
-	{
-	case Direction::NORTH:
-		Destination.first = ((playerTile.first * 2) - NPCTile.first) + multX;
-		break;
-	case Direction::SOUTH:
-		Destination.first = ((playerTile.first * 2) - NPCTile.first) + multX;
-		break;
-	case Direction::EAST:
-		Destination.second = (playerTile.second * 2) - NPCTile.second + multY;
-		break;
-	case Direction::WEST:
-		Destination.second = (playerTile.second * 2) - NPCTile.second + multY;
-		break;
-	default:
-		break;
-	}
-	if (!TileMap[get_1d(Destination.first, Destination.second)].spawned)
-	{
-		TileMap[get_1d(Destination.first, Destination.second)].spawned = true;
-		master->SpawnDirection(get_1d(Destination.first, Destination.second));
-	}
 }
 
 void WorldGenerator::SetWaypoints(int X, int Y, FVector Waypoints[4])
@@ -309,4 +263,44 @@ bool WorldGenerator::IsFarAway(int position, FVector JPos)
 	std::pair<int, int> NPCTile = get_2d(position);
 	return abs(sqrt(pow(playerTile.first - NPCTile.first, 2) + pow(playerTile.second - NPCTile.second, 2))) > StaticCast <int>(4800/GridToCoordMult);
 
+}
+
+void WorldGenerator::EliminarActor(ABasicNPC* actor, int tile)
+{
+	master->RemoveActor(actor);
+	TileMap[tile].spawned = false;
+}
+
+void WorldGenerator::CheckPlayerPos(AUniPurgeCharacter* jugador)
+{
+	//We check if the player changed tile.
+	//If so, we change the tile and spawn NPCs
+
+	std::pair<int, int> playerTile = { StaticCast<int>((jugador->GetActorLocation().X + 400) / 800), StaticCast<int>((jugador->GetActorLocation().Y + 400) / 800)};
+	int jug = get_1d(playerTile.first, playerTile.second);
+	if (jug != currentPlayerTile)
+	{
+		//The player changed the tile they are on
+		ChangedTile(currentPlayerTile, jug);
+	}
+}
+
+void WorldGenerator::ChangedTile(int OldTile, int NewTile)
+{
+	currentPlayerTile = NewTile;
+	std::pair<int, int> pos = get_2d(NewTile);
+
+	//We check for the sphere around the player and spawn any non spawned NPCs
+	for (int X = -RenderRadius; X <= RenderRadius; X++)
+	{
+		for (int Y = -RenderRadius; Y <= RenderRadius; Y++)
+		{
+			if (!TileMap[get_1d(X + pos.first, Y + pos.second)].spawned)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Spawn in = %d"), get_1d(X + pos.first, Y + pos.second));
+				TileMap[get_1d(X + pos.first, Y + pos.second)].spawned = true;
+				master->SpawnDirection(get_1d(X + pos.first, Y + pos.second));
+			}
+		}
+	}
 }

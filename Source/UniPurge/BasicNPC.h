@@ -29,6 +29,9 @@ public:
 
 	void UpdatePatrol();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "State")
+	bool active;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -63,9 +66,9 @@ private:
 
 	int currentWaypoint;
 
-	bool disabled;
-
 	float sumDelta;
+
+	
 
 	
 

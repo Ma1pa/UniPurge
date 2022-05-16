@@ -15,6 +15,7 @@
 #include "GameMaster.generated.h"
 
 class UNIPURGE_API WorldGenerator;
+class UNIPURGE_API ABasicNPC;
 
 struct Tile
 {
@@ -54,10 +55,14 @@ public:
 		int Side = 10;
 
 
-	UPROPERTY(EditAnywhere, Category = "Jugador")
+	UPROPERTY(EditAnywhere, Category = "Jugador", blueprintReadOnly)
 		AUniPurgeCharacter* jugador;
 
 	int RadiusOfSpawn = 4800;
+
+	//TODO Make IsShift in code so that spawns can be disabled
+	UPROPERTY(BlueprintReadWrite)
+	bool PlayerIsShifting;
 
 private:
 
@@ -71,7 +76,8 @@ private:
 	std::queue<ABaseBlock*> Actualizar;
 	int seed;
 
-	
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	TArray<ABasicNPC*> NPCsActivos;
 
 protected:
 	// Called when the game starts or when spawned
@@ -99,6 +105,8 @@ public:
 	void SpawnDirection(int position);
 
 	void GenerarNPC(int puntoSpawn, FVector Posicion);
+
+	void RemoveActor(ABasicNPC* actor);
 };
 
 
@@ -108,17 +116,13 @@ class UNIPURGE_API WorldGenerator
 {
 public:
 
-	WorldGenerator(int S, int H, AGameMaster* mast);
+	WorldGenerator(int RR, int H, AGameMaster* mast);
 	WorldGenerator();
 	~WorldGenerator();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = GenerationOptions)
 		/* Side of the world generated (2D) */
 		int Side;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = GenerationOptions)
-		/* Seed to use in the random generation */
-		int Seed;
 
 	/* Function called to recieve the tile with the least entropy
 	* @return Int pair indicating the 2D position of the tile in the graph
@@ -169,8 +173,6 @@ public:
 
 	void CreateHoses(int X, int Y, int group, int h, bool park);
 
-	void GetOppositeTile(int ogTile, FVector posPlayer);
-
 	void SetWaypoints(int X, int Y, FVector Waypoints[4]);
 
 	FVector* GetWaypoints(int position);
@@ -180,6 +182,10 @@ public:
 	FVector RetrievePosition(int position);
 
 	bool IsFarAway(int position, FVector JPos);
+
+	void EliminarActor(ABasicNPC* actor, int tile);
+
+	void CheckPlayerPos(AUniPurgeCharacter* jugador);
 
 	int currentPlayerTile;
 	Direction playerLastMovement;
@@ -205,8 +211,9 @@ private:
 	bool RoadInDirection(Block road, Direction direction);
 	AGameMaster* master;
 
+	void ChangedTile(int OldTile, int NewTile);
 
-
+	int RenderRadius;
 	/**
 	* Function used to attain the Array position of a 2D position
 	* @param Columna : The X Position ^

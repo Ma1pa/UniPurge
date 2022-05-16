@@ -10,8 +10,8 @@ ABasicNPC::ABasicNPC()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	currentWaypoint = 0;
-	disabled = false;
 	MaxDistance = 4800.0f;
+	active = true;
 
 }
 void ABasicNPC::Iniciar(WorldGenerator* gen, int tile)
@@ -49,10 +49,10 @@ void ABasicNPC::Tick(float DeltaTime)
 
 	//FVector pos = { GetActorLocation().X,GetActorLocation().Y,0 };
 	//FVector otro = { jugador->GetActorLocation().X,jugador->GetActorLocation().Y,0 };
-	if (generador->IsFarAway(position, jugador->GetActorLocation()))
+	if (active && generador->IsFarAway(position, jugador->GetActorLocation()))
 	{
 		generador->StorePosition(position, FVector{ GetActorLocation().X,GetActorLocation().Y,250.0f });
-		generador->GetOppositeTile(position, jugador->GetActorLocation());
+		generador->EliminarActor(this, position);
 		Destroy();
 	}
 
@@ -74,8 +74,7 @@ void ABasicNPC::PointReached( bool isDefined)
 			currentWaypoint = 0;
 		Destination = ListOfObjectives[currentWaypoint];
 	}
-	if(!disabled)
-		EmpezarNavegar();
+	EmpezarNavegar();
 }
 
 void ABasicNPC::EmpezarNavegar_Implementation()

@@ -73,12 +73,6 @@ protected:
 	 */
 	void LookUpAtRate(float Rate);
 
-	/**
-	* Called via input to change between world states and animations.
-	* @param Intensity	This is the intensity of the animation. Only at 1 or -1 does it change states
-	*/
-	void DimensionShift(float Intensity);
-
 	/* Called via input to indicate that the sprint action has started	*/
 	void StartSprint();
 
@@ -90,9 +84,6 @@ protected:
 
 	/* Called via input to indicate that the hiding action has ended */
 	void StopHide();
-
-	/* Called via input to indicate to toggle the Menu	*/
-	void Menu();
 
 	/**
 	 * Called when moving while climbing. Returns direction of movement
