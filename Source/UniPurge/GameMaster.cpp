@@ -23,12 +23,23 @@ AGameMaster::AGameMaster()
 	//generator.seed(1);
 }
 
+void AGameMaster::UpdateRender_Implementation(int NewDistance)
+{
+	RenderDistance = NewDistance;
+}
+
+void AGameMaster::UpdateNPCRadius(int NewRadius)
+{
+	RadiusOfSpawn = NewRadius;
+	Generator->UpdateNPCR(NewRadius);
+}
+
 // Called when the game starts or when spawned
 void AGameMaster::BeginPlay()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Inicio Juego"));
 	//(Generator)->~WorldGenerator();   //call the destructor explicitly
-	Generator = new WorldGenerator(StaticCast<int>(RadiusOfSpawn/GridToCoordMult), Side, this);
+	Generator = new WorldGenerator(StaticCast<int>(RadiusOfSpawn), Side, this);
 	
 	Super::BeginPlay();
 	StartGeneration();

@@ -19,7 +19,7 @@ public:
 	// Sets default values for this actor's properties
 	ABaseBlock();
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		UStaticMeshComponent* StaticMesh;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
@@ -48,12 +48,16 @@ public:
 
 	bool floored = false;
 
+	UFUNCTION(blueprintCallable)
+	void SetRenderDistance(int distance);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	//List of all possible elements
-	UStaticMeshComponent* StaticElements[5];
+	UPROPERTY(BlueprintReadOnly)
+	TArray<UStaticMeshComponent*> StaticElements;
 
 public:	
 	// Called every frame

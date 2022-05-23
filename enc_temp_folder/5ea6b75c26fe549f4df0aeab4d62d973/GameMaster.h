@@ -50,7 +50,7 @@ public:
 	UPROPERTY(EditAnywhere)
 		UStaticMeshComponent* StaticMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere)
 		/* Side of the square of the desired grid */
 		int Side = 10;
 
@@ -66,7 +66,7 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool PlayerIsShifting;
 
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	UFUNCTION(BlueprintNativeEvent)
 		void UpdateRender(int NewDistance);
 
 	UFUNCTION(BlueprintCallable)

@@ -10,10 +10,10 @@ ABaseBlock::ABaseBlock()
 	currentBlock = Block::NOTHING;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
 	HeightFromThis = 0;
-	for (int i = 0; i < std::size(StaticElements); i++)
+	for (int i = 0; i < 5; i++)
 	{
-		StaticElements[i] = CreateDefaultSubobject<UStaticMeshComponent>(FName(*FString::FromInt(i)));
-		StaticElements[i]->LDMaxDrawDistance = 30000.0f;
+		StaticElements.Push(CreateDefaultSubobject<UStaticMeshComponent>(FName(*FString::FromInt(i))));
+		StaticElements[i]->LDMaxDrawDistance = 32000.0f;
 		StaticElements[i]->SetupAttachment(StaticMesh);
 		//StaticElements[i]->AttachToComponent(StaticMesh,FAttachmentTransformRules::KeepWorldTransform);
 	}
@@ -22,6 +22,14 @@ ABaseBlock::ABaseBlock()
 	
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+}
+void ABaseBlock::SetRenderDistance(int distance)
+{
+	StaticMesh->LDMaxDrawDistance = StaticCast<float>(distance);
+	for (int i = 0; i < StaticElements.Num(); i++)
+	{
+		StaticElements[i]->LDMaxDrawDistance = StaticCast<float>(distance);
+	}
 }
 // Called when the game starts or when spawned
 void ABaseBlock::BeginPlay()

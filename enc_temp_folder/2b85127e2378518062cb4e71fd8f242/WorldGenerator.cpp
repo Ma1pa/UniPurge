@@ -263,7 +263,7 @@ bool WorldGenerator::IsFarAway(int position, FVector JPos)
 	//We get which tile the player is on
 	std::pair<int, int> playerTile = { StaticCast<int>((JPos.X + (GridToCoordMult/2)) / GridToCoordMult), StaticCast<int>((JPos.Y + (GridToCoordMult/2)) / GridToCoordMult) };
 	std::pair<int, int> NPCTile = get_2d(position);
-	return abs(sqrt(pow(playerTile.first - NPCTile.first, 2) + pow(playerTile.second - NPCTile.second, 2))) > StaticCast <int>(NPCRadius);
+	return abs(sqrt(pow(playerTile.first - NPCTile.first, 2) + pow(playerTile.second - NPCTile.second, 2))) > StaticCast <int>(NPCRadius*GridToCoordMult);
 
 }
 
