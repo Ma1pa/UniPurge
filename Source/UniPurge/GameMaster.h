@@ -75,9 +75,11 @@ public:
 private:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	TSubclassOf<AActor> ActorToSpawn;
+		TSubclassOf<AActor> ActorToSpawn;
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<AActor> NPCToSpawn;
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+		TSubclassOf<AActor> MainNPC;
 
 	const int AverageGroup = 4;
 

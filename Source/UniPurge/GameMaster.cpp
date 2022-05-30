@@ -133,6 +133,21 @@ void AGameMaster::StartGeneration()
 	}
 	//We generate NPCs in the world
 	Generator->CheckPlayerPos(jugador);
+
+	//We Spawn the main NPC in the world
+	const FRotator Rotation = GetActorRotation();
+	//Position random of the outer circle, either side
+	FVector Posicion = { StaticCast<float>((std::rand() % (Side / 3)) + ((std::rand()%2) * (4*(Side/6))) * GridToCoordMult), StaticCast<float>((std::rand() % (Side / 3)) + ((std::rand() % 2) * (4 * (Side / 6))) * GridToCoordMult),250.0f};
+	ABasicNPC* NPC = GetWorld()->SpawnActor<ABasicNPC>(MainNPC, Posicion, Rotation);
+	NPC->Iniciar(Generator, -1);
+	NPC->jugador = jugador;
+	NPC->ListOfObjectives.Add(FVector(Posicion));
+	NPC->ListOfObjectives.Add(FVector(0.0f,0.0f,250.0f));
+	NPC->ListOfObjectives.Add(FVector(std::rand()%(Side/2) * GridToCoordMult, std::rand() % (Side / 2) * GridToCoordMult, 250.0f));
+	NPC->ListOfObjectives.Add(FVector(Side*GridToCoordMult-200,Side*GridToCoordMult-200,250.0f));
+	NPC->ListOfObjectives.Add(FVector((std::rand() % (Side / 2))*2 * GridToCoordMult, (std::rand() % (Side / 2))*2 * GridToCoordMult,250.0f));
+	NPC->PointReached(false);
+	NPCsActivos.Add(NPC);
 }
 
 void AGameMaster::GroupHouses(int X, int Y, int group, bool park)

@@ -68,6 +68,8 @@ private:
 
 	float sumDelta;
 
+	bool important;
+
 	
 
 	

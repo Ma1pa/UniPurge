@@ -3,7 +3,6 @@
 
 #include "BasicNPC.h"
 
-
 // Sets default values
 ABasicNPC::ABasicNPC()
 {
@@ -17,7 +16,10 @@ ABasicNPC::ABasicNPC()
 void ABasicNPC::Iniciar(WorldGenerator* gen, int tile)
 {
 	generador = gen;
-	position = tile;
+	if (tile == -1)
+		important = true;
+	else
+		position = tile;
 	//SetActorLocation(generador->RetrievePosition(position));
 	
 }
@@ -49,7 +51,7 @@ void ABasicNPC::Tick(float DeltaTime)
 
 	//FVector pos = { GetActorLocation().X,GetActorLocation().Y,0 };
 	//FVector otro = { jugador->GetActorLocation().X,jugador->GetActorLocation().Y,0 };
-	if (active && generador->IsFarAway(position, jugador->GetActorLocation()))
+	if (!important && active && generador->IsFarAway(position, jugador->GetActorLocation()))
 	{
 		generador->StorePosition(position, FVector{ GetActorLocation().X,GetActorLocation().Y,250.0f });
 		generador->EliminarActor(this, position);
