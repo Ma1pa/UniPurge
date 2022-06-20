@@ -21,6 +21,46 @@ float ATrap::GetCurrentCost()
 	return ListOfCosts[currentNumber];
 }
 
+void ATrap::NextTrap()
+{
+	if (ListOfMeshes.Num() > 0)
+	{
+		int siguienteMesh = currentNumber + 1;
+		if(ListOfMeshes.Num() > siguienteMesh)
+		{
+			StaticMesh->SetStaticMesh(ListOfMeshes[siguienteMesh]);
+			SetActorRelativeScale3D({ ListOfScale[siguienteMesh], ListOfScale[siguienteMesh], ListOfScale[siguienteMesh] });
+			currentNumber = siguienteMesh;
+		}
+		else
+		{
+			StaticMesh->SetStaticMesh(ListOfMeshes[0]);
+			SetActorRelativeScale3D({ ListOfScale[0], ListOfScale[0], ListOfScale[0] });
+			currentNumber = 0;
+		}
+		
+	}
+}
+
+void ATrap::PreviousTrap()
+{
+	if (ListOfMeshes.Num() > 0)
+	{
+		if (currentNumber == 0)
+		{
+			StaticMesh->SetStaticMesh(ListOfMeshes[ListOfMeshes.Num() - 1]);
+			SetActorRelativeScale3D({ ListOfScale[ListOfMeshes.Num() - 1], ListOfScale[ListOfMeshes.Num() - 1], ListOfScale[ListOfMeshes.Num() - 1] });
+			currentNumber = ListOfMeshes.Num() - 1;
+		}
+		else
+		{
+			currentNumber -= 1;
+			StaticMesh->SetStaticMesh(ListOfMeshes[currentNumber]);
+			SetActorRelativeScale3D({ ListOfScale[currentNumber], ListOfScale[currentNumber], ListOfScale[currentNumber] });
+		}
+	}
+}
+
 // Called when the game starts or when spawned
 void ATrap::BeginPlay()
 {

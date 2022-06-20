@@ -289,11 +289,7 @@ void AUniPurgeCharacter::StopClimbing()
 
 void AUniPurgeCharacter::EnterShift()
 {
-	if (CurrentEnergy >= ShiftEnterCost)
-	{
-		CurrentEnergy -= ShiftEnterCost;
 		isShifting = true;
-	}
 }
 
 void AUniPurgeCharacter::ExitShift()

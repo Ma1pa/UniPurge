@@ -35,6 +35,11 @@ public:
 
 	float GetCurrentCost();
 
+	UFUNCTION(BlueprintCallable, Category = "Trap")
+	void NextTrap();
+	UFUNCTION(BlueprintCallable, Category = "Trap")
+	void PreviousTrap();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
