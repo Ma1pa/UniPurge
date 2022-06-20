@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "UniPurge/Trap.h"
 
 #include "UniPurgeCharacter.generated.h"
 
@@ -20,8 +21,16 @@ class AUniPurgeCharacter : public ACharacter
 	/* Follow camera */
 	class UCameraComponent* FollowCamera;
 
+	UFUNCTION(BlueprintCallable)
+	void InShift(float deltaTime);
+
+	
+
 public:
 	AUniPurgeCharacter();
+
+	UPROPERTY(EditAnywhere, Category = Trap)
+	TSubclassOf<AActor> SelectedTrap;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	/* Base turn rate, in deg/sec. Other scaling may affect final turn rate. */
@@ -46,12 +55,36 @@ public:
 	/* Boolean indicating if the character is running */
 	bool IsRunning;
 
+	UFUNCTION(BlueprintCallable)
+	void EnterShift();
+
+	UFUNCTION(BlueprintCallable)
+	void ExitShift();
+
+	UFUNCTION(BlueprintCallable)
+	void PlaceTrap();
+
+	UFUNCTION(BlueprintCallable, Category = Trap)
+		float CostOfTrap();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Energy)
+		float MaxEnergy;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Energy)
+		float CurrentEnergy;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Energy)
+		float EnergyRecovery;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Energy)
+		float ShiftEnterCost;
+
+
 private:
 	
+	bool isShifting;
 	FVector CollisionNormal;
 	bool IsClimbing;
 	FVector HeadArea;
 	FVector FeetArea;
+	ATrap* selectedTrap;
+	void TrapToFloor();
 
 protected:
 
@@ -112,8 +145,6 @@ protected:
 	/* Called to stop climbing */
 	void StopClimbing();
 
-	// TODO: Add Wall Climbing
-	// TODO: Add Swimming
 
 	UFUNCTION(BlueprintCallable)
 		void OnCollisionEnter(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -129,6 +160,7 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
-	// TODO: Add return of IsHiding (Not know if INLINE or not)
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE ATrap* GetCurrentTrap() { return selectedTrap; }
 };
 

@@ -37,6 +37,8 @@ struct Tile
 	FVector agentPos;
 	/* If the NPC is Spawned */
 	bool spawned = false;
+	/* If it has an NPC*/
+	bool hasNPC = false;
 };
 
 UCLASS()
@@ -72,6 +74,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void UpdateNPCRadius(int NewRadius);
 
+	UPROPERTY(BlueprintReadWrite)
+		TArray<AActor*> WorldWalls;
+
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+		TArray<ATrap*> TrampasPuestas;
+
 private:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
@@ -80,6 +88,8 @@ private:
 		TSubclassOf<AActor> NPCToSpawn;
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 		TSubclassOf<AActor> MainNPC;
+	
+	void CheckFirstTrap();
 
 	const int AverageGroup = 4;
 
@@ -88,6 +98,8 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	TArray<ABasicNPC*> NPCsActivos;
+
+	
 
 protected:
 	// Called when the game starts or when spawned
@@ -98,6 +110,11 @@ protected:
 	void StartGeneration();
 
 	void GroupHouses(int X, int Y, int group, bool park);
+
+	void GenerateRoads();
+	void GenerateRivers();
+	void GenerateHouses();
+	void SpawnMainNPC();
 
 public:	
 	
@@ -117,6 +134,23 @@ public:
 	void GenerarNPC(int puntoSpawn, FVector Posicion);
 
 	void RemoveActor(ABasicNPC* actor);
+
+	UFUNCTION(BlueprintCallable)
+	void WallsToBorder();
+	UFUNCTION(BlueprintCallable)
+	void WallsToCoord( int radius);
+
+	UFUNCTION(BlueprintCallable)
+		void AddTrap(ATrap* trap);
+
+	UFUNCTION(BlueprintCallable)
+		void ExitShift();
+
+	UFUNCTION(BlueprintCallable)
+		void EnterShift(int radius);
+
+	UFUNCTION(BlueprintCallable)
+		void RemoveTrap(ATrap* trap);
 };
 
 
@@ -157,7 +191,7 @@ public:
 	*/
 	int GetPosibilities(int X, int Y);
 
-	void AddAgent(int X, int Y, ABaseBlock* bloque);
+	void AddAgent(int X, int Y, ABaseBlock* bloque, bool hasNPC);
 
 	/* Function called whenever a block is chosen. It collapses other options in the tile and simplifies the others
 	* @param X : The X position in the array where the block will be placed

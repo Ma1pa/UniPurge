@@ -226,9 +226,10 @@ int WorldGenerator::GetPosibilities(int X, int Y)
 	return TileMap[get_1d(X, Y)].posibilities.size();
 }
 
-void WorldGenerator::AddAgent(int X, int Y, ABaseBlock* bloque)
+void WorldGenerator::AddAgent(int X, int Y, ABaseBlock* bloque, bool hasNPC)
 {
 	TileMap[get_1d(X, Y)].agent = bloque;
+	TileMap[get_1d(X, Y)].hasNPC = hasNPC;
 }
 
 void WorldGenerator::SetWaypoints(int X, int Y, FVector Waypoints[4])
@@ -302,11 +303,28 @@ void WorldGenerator::ChangedTile(int OldTile, int NewTile)
 	{
 		for (int Y = -NPCRadius; Y <= NPCRadius; Y++)
 		{
-			if (!TileMap[get_1d(X + pos.first, Y + pos.second)].spawned)
+			if (TileMap[get_1d(X + pos.first, Y + pos.second)].hasNPC && !TileMap[get_1d(X + pos.first, Y + pos.second)].spawned)
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Spawn in = %d"), get_1d(X + pos.first, Y + pos.second));
 				TileMap[get_1d(X + pos.first, Y + pos.second)].spawned = true;
 				master->SpawnDirection(get_1d(X + pos.first, Y + pos.second));
+				//Spawn in the various heights of a building, with a variable change depending on height
+				if(TileMap[get_1d(X + pos.first, Y + pos.second)].height > 0 && TileMap[get_1d(X + pos.first, Y + pos.second)].block == Block::BUILDING)
+				{
+					int altura = TileMap[get_1d(X + pos.first, Y + pos.second)].height + 1;
+					int MaxAltura = altura;
+					while (altura > 0)
+					{
+						std::discrete_distribution<int> ProbSpawn({ 1,StaticCast<double>(altura/MaxAltura) });
+						if (ProbSpawn(generator))
+						{
+							FVector localiz = TileMap[get_1d(X + pos.first, Y + pos.second)].agent->GetActorLocation();
+							localiz = { localiz.X, localiz.Y, StaticCast<float>(260 + 300 * altura) };
+							master->GenerarNPC(get_1d(X + pos.first, Y + pos.second), localiz);
+						}
+						altura--;
+					}
+				}
 			}
 		}
 	}

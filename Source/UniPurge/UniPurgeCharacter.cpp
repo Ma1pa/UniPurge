@@ -11,7 +11,7 @@
 
 #include "DrawDebugHelpers.h"
 #include <Runtime/Engine/Classes/Kismet/GameplayStatics.h>
-#include <UniPurge/BasicNPC.h>
+
 
 #define PrintString(String) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::White, String)
 
@@ -55,7 +55,6 @@ AUniPurgeCharacter::AUniPurgeCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
-
 	
 
 	//Other Variables
@@ -64,6 +63,7 @@ AUniPurgeCharacter::AUniPurgeCharacter()
 	CollisionNormal = FVector::ZeroVector;
 	HeadArea = FVector(0, 0, 70);
 	FeetArea = FVector(0, 0, -100);
+	selectedTrap = nullptr;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -287,3 +287,88 @@ void AUniPurgeCharacter::StopClimbing()
 	SetActorRotation(FQuat::Identity);
 }
 
+void AUniPurgeCharacter::EnterShift()
+{
+	if (CurrentEnergy >= ShiftEnterCost)
+	{
+		CurrentEnergy -= ShiftEnterCost;
+		isShifting = true;
+	}
+}
+
+void AUniPurgeCharacter::ExitShift()
+{
+	isShifting = false;
+	if (selectedTrap != nullptr)
+	{
+		selectedTrap->Destroy();
+		selectedTrap = nullptr;
+	}
+}
+
+void AUniPurgeCharacter::InShift(float deltaTime)
+{
+	if (isShifting)
+	{
+		FHitResult Hit;
+		FRotator Rot = GetViewRotation();
+
+		FVector Start = GetActorLocation() + HeadArea;
+		FVector End = Start + Rot.Vector() * 10000;
+
+		FCollisionQueryParams TraceParams;
+		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
+		if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, TraceParams))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Choco"));
+			if (selectedTrap == nullptr)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ColocoTrampa"));
+				FVector posicion = { Hit.Location.X, Hit.Location.Y, Hit.Location.Z };
+				selectedTrap = GetWorld()->SpawnActor<ATrap>(SelectedTrap, posicion, GetActorRotation());
+			}
+			else if(Hit.Actor != selectedTrap)
+			{
+				selectedTrap->SetActorLocation(GetActorLocation());
+				selectedTrap->SetActorRelativeRotation(GetActorRotation());
+				selectedTrap->SetActorLocation(Hit.Location, true);
+				TrapToFloor();
+				
+			}
+		}
+	}
+	else
+	{
+		if (CurrentEnergy < MaxEnergy)
+			CurrentEnergy += EnergyRecovery * deltaTime;
+		else
+			CurrentEnergy = MaxEnergy;
+	}
+}
+
+void AUniPurgeCharacter::TrapToFloor()
+{
+	FHitResult Hit;
+	FRotator Rot = {-90,0,0};
+
+	FVector Start = selectedTrap->GetActorLocation();
+	FVector End = Start + Rot.Vector() * 10000;
+
+	FCollisionQueryParams TraceParams;
+	DrawDebugLine(GetWorld(), Start, End, FColor::Yellow, false, 2.0f);
+	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, TraceParams))
+	{
+		selectedTrap->SetActorLocation(Hit.Location, true);
+	}
+}
+
+void AUniPurgeCharacter::PlaceTrap()
+{
+	selectedTrap->PlaceTrap();
+	selectedTrap = nullptr;
+}
+
+float AUniPurgeCharacter::CostOfTrap()
+{
+	return selectedTrap->GetCurrentCost();
+}
