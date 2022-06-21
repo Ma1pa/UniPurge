@@ -152,6 +152,7 @@ void AGameMaster::GenerateRoads()
 
 void AGameMaster::GenerateRivers()
 {
+	//TODO
 }
 
 void AGameMaster::GenerateHouses()
@@ -218,6 +219,7 @@ void AGameMaster::ExitShift()
 void AGameMaster::EnterShift(int radius)
 {
 	WallsToCoord(radius);
+	ReloadAdditions();
 	TrampasPuestas.Remove(nullptr);
 	if (TrampasPuestas.Num() > 0)
 	{	
@@ -347,4 +349,9 @@ void AGameMaster::WallsToCoord( int radius)
 			break;
 		}
 	}
+}
+
+void AGameMaster::ReloadAdditions()
+{
+	Generator->UpdateAdditions();
 }

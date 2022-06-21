@@ -329,3 +329,13 @@ void WorldGenerator::ChangedTile(int OldTile, int NewTile)
 		}
 	}
 }
+
+void WorldGenerator::UpdateAdditions()
+{
+	//Call a function in all tiles
+	for (int i = 0; i < TileMap.size(); i++)
+	{
+		if(TileMap[i].block == Block::BUILDING)
+			TileMap[i].agent->UpdateAll();
+	}
+}

@@ -51,6 +51,8 @@ public:
 	UFUNCTION(blueprintCallable)
 	void SetRenderDistance(int distance);
 
+	void UpdateAll();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -80,5 +82,9 @@ private:
 	UStaticMesh* GetMesh(Block selected);
 
 	int HeightFromThis;
+
+	ABaseBlock* blockUp;
+
+	void UpdateAdditions(int element);
 
 };

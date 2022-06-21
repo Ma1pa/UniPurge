@@ -90,6 +90,7 @@ private:
 		TSubclassOf<AActor> MainNPC;
 	
 	void CheckFirstTrap();
+	void ReloadAdditions();
 
 	const int AverageGroup = 4;
 
@@ -235,6 +236,8 @@ public:
 	Direction playerLastMovement;
 
 	void UpdateNPCR(int NewRadius);
+
+	void UpdateAdditions();
 
 protected:
 	/* Tile map used to guide generation */

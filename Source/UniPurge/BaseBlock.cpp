@@ -7,6 +7,7 @@
 // Sets default values
 ABaseBlock::ABaseBlock()
 {
+	blockUp = nullptr;
 	currentBlock = Block::NOTHING;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
 	HeightFromThis = 0;
@@ -31,6 +32,7 @@ void ABaseBlock::SetRenderDistance(int distance)
 		StaticElements[i]->LDMaxDrawDistance = StaticCast<float>(distance);
 	}
 }
+
 // Called when the game starts or when spawned
 void ABaseBlock::BeginPlay()
 {
@@ -70,6 +72,7 @@ void ABaseBlock::SetStats(Block block, int height)
 							horizontalExits[3] == Connections::SAMEGROUP ? 2 : horizontalExits[3] == Connections::DIFFERENTGROUP ? 3 : 0);
 		actor->SetStats(Block::BUILDING, HeightFromThis - 1);
 		actor->UpdateBuilding();
+		blockUp = actor;
 	}
 	
 }
@@ -82,6 +85,14 @@ void ABaseBlock::UpdateBuilding()
 	CreateBuildingElement(2);	//South
 	CreateBuildingElement(3);	//West
 	CreateBuildingElement(4);	//Up
+}
+
+void ABaseBlock::UpdateAll()
+{
+	for(int i = 0; i < StaticElements.Num(); i++)
+		UpdateAdditions(i);
+	if (blockUp != nullptr)
+		blockUp->UpdateAll();
 }
 
 void ABaseBlock::CreateBuildingElement(int side)
@@ -213,3 +224,40 @@ UStaticMesh* ABaseBlock::GetMesh(Block selected)
 	return nullptr;
 }
 
+void ABaseBlock::UpdateAdditions(int element)
+{
+	switch (element)	//0-4 Horizontal
+	{
+	case 0:
+	case 1:
+	case 2:
+	case 3:
+	case 4:
+		switch (horizontalExits[element])
+		{
+		case Connections::DISCONNECTED:
+			StaticElements[element]->SetStaticMesh(OpenWall[generator() % OpenWall.Num()]);
+			break;
+		case Connections::EXIT:
+			StaticElements[element]->SetStaticMesh(DoorWall[generator() % DoorWall.Num()]);
+			break;
+		case Connections::SAMEGROUP:
+			StaticElements[element]->SetStaticMesh(ConectorWall);
+			break;
+		case Connections::DIFFERENTGROUP:
+			StaticElements[element]->SetStaticMesh(BlockWall);
+			break;
+		}
+		break;
+	case 5:
+		if (floored)
+		{
+			StaticElements[element]->SetStaticMesh(BasicFloor);
+		}
+		else
+		{
+			StaticElements[element]->SetStaticMesh(FloorMeshes[generator() % FloorMeshes.Num()]);
+		}
+		break;
+	}
+}
