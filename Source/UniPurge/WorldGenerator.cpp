@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
+#include "WorldGenerator.h"
 #include "GameMaster.h"
 
 WorldGenerator::WorldGenerator(){};
@@ -11,6 +11,7 @@ WorldGenerator::WorldGenerator(int RR, int H, AGameMaster* mast)
 	Side = H;
 	NPCRadius = RR;
 	currentPlayerTile = 0;
+	isUpdating = false;
 	for (int i = 0; i < Side * Side; i++)
 	{
 		TileMap.push_back(Tile());
@@ -293,6 +294,13 @@ void WorldGenerator::UpdateNPCR(int NewRadius)
 	NPCRadius = NewRadius;
 }
 
+void WorldGenerator::LoadUpdates()
+{
+	initialUpdate = std::rand() % TileMap.size();
+	currentUpdate = initialUpdate;
+	isUpdating = true;
+}
+
 void WorldGenerator::ChangedTile(int OldTile, int NewTile)
 {
 	currentPlayerTile = NewTile;
@@ -330,12 +338,19 @@ void WorldGenerator::ChangedTile(int OldTile, int NewTile)
 	}
 }
 
-void WorldGenerator::UpdateAdditions()
+void WorldGenerator::UpdateAdditions(int amount)
 {
 	//Call a function in all tiles
-	for (int i = 0; i < TileMap.size(); i++)
+	for (int i = 0; i < amount; i++)
 	{
-		if(TileMap[i].block == Block::BUILDING)
-			TileMap[i].agent->UpdateAll();
+		TileMap[currentUpdate].agent->UpdateAll();
+		currentUpdate++;
+		if (currentUpdate >= TileMap.size()-1)
+			currentUpdate = 0;
+		if (initialUpdate == currentUpdate)
+		{
+			isUpdating = false;
+			return;
+		}
 	}
 }

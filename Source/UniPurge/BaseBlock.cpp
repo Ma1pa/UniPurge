@@ -89,8 +89,11 @@ void ABaseBlock::UpdateBuilding()
 
 void ABaseBlock::UpdateAll()
 {
-	for(int i = 0; i < StaticElements.Num(); i++)
-		UpdateAdditions(i);
+	if (currentBlock == Block::BUILDING)
+	{
+		for (int i = 0; i < StaticElements.Num(); i++)
+			UpdateAdditionsBuilding(i);
+	}
 	if (blockUp != nullptr)
 		blockUp->UpdateAll();
 }
@@ -224,7 +227,7 @@ UStaticMesh* ABaseBlock::GetMesh(Block selected)
 	return nullptr;
 }
 
-void ABaseBlock::UpdateAdditions(int element)
+void ABaseBlock::UpdateAdditionsBuilding(int element)
 {
 	switch (element)	//0-4 Horizontal
 	{

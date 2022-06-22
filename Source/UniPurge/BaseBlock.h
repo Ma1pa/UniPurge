@@ -85,6 +85,6 @@ private:
 
 	ABaseBlock* blockUp;
 
-	void UpdateAdditions(int element);
+	void UpdateAdditionsBuilding(int element);
 
 };

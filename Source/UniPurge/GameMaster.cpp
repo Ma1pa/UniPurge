@@ -62,6 +62,8 @@ void AGameMaster::StartGeneration()
 	Generator->CheckPlayerPos(jugador);
 	
 	SpawnMainNPC();
+
+	FillEmpties();
 	
 }
 
@@ -197,6 +199,20 @@ void AGameMaster::SpawnMainNPC()
 	NPC->ListOfObjectives.Add(FVector((std::rand() % (Side / 2)) * 2 * GridToCoordMult, (std::rand() % (Side / 2)) * 2 * GridToCoordMult, 250.0f));
 	NPC->PointReached(false);
 	NPCsActivos.Add(NPC);
+}
+
+void AGameMaster::FillEmpties()
+{
+	for (int i = 0; i < Side; i++)
+	{
+		for (int j = 0; j < Side; j++)
+			//If we find a road
+			if (Generator->GetBlock(i, j) == Block::EMPTY)
+			{
+				Generator->CreateHoses(i, j, -1, 0, true);
+				GenerarActor(Generator->GetBlock(i, j), i, j);
+			}
+	}
 }
 
 void AGameMaster::AddTrap(ATrap* trap)
@@ -353,5 +369,11 @@ void AGameMaster::WallsToCoord( int radius)
 
 void AGameMaster::ReloadAdditions()
 {
-	Generator->UpdateAdditions();
+	Generator->LoadUpdates();
+}
+
+void AGameMaster::UpdateAsync(int amount)
+{
+	if (Generator->isUpdating)
+		Generator->UpdateAdditions(amount);
 }

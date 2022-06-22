@@ -75,12 +75,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Energy)
 		float ShiftEnterCost;
 
+	UPROPERTY(BlueprintReadOnly)
+	bool IsClimbing;
+
+	UPROPERTY(BlueprintReadOnly)
+	FVector CollisionNormal;
+
 
 private:
 	
 	bool isShifting;
-	FVector CollisionNormal;
-	bool IsClimbing;
+	
+	
 	FVector HeadArea;
 	FVector FeetArea;
 	ATrap* selectedTrap;

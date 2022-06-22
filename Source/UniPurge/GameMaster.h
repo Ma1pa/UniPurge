@@ -80,6 +80,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 		TArray<ATrap*> TrampasPuestas;
 
+	UFUNCTION(BlueprintCallable)
+		void UpdateAsync(int amount);
+
 private:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
@@ -116,6 +119,7 @@ protected:
 	void GenerateRivers();
 	void GenerateHouses();
 	void SpawnMainNPC();
+	void FillEmpties();
 
 public:	
 	
@@ -237,7 +241,10 @@ public:
 
 	void UpdateNPCR(int NewRadius);
 
-	void UpdateAdditions();
+	void UpdateAdditions(int amount);
+
+	void LoadUpdates();
+	bool isUpdating;
 
 protected:
 	/* Tile map used to guide generation */
@@ -257,6 +264,8 @@ protected:
 
 private:
 
+	int initialUpdate;
+	int currentUpdate;
 	int RenderDistance;
 	int NPCRadius;
 

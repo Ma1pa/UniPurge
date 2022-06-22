@@ -146,11 +146,12 @@ void AUniPurgeCharacter::MoveRight(float Value)
 		if (IsClimbing)
 		{
 			Direction = WallMovement(-FVector::RightVector, ModifiedValue >= 0);
-			ModifiedValue *= ClimbModifier;
+			if(!IsRunning)
+				ModifiedValue *= ClimbModifier;
 		}
 
 		//Calculate modifications to speed
-		if (IsRunning && !IsClimbing)	ModifiedValue *= SprintModifier;
+		if (IsRunning)	ModifiedValue *= SprintModifier;
 		//if (IsHiding)	ModifiedValue *= HidingModifier;
 
 		// add movement in that direction
@@ -226,6 +227,8 @@ bool AUniPurgeCharacter::CheckWallAtPos(FVector StartingPoint)
 
 bool AUniPurgeCharacter::CheckWallAtAngles(FVector StartingPoint, bool Right)
 {
+	if (IsRunning)
+		return false;
 	FHitResult Hit;
 	FRotator Rot = CollisionNormal.Rotation();
 	float Yaw = 90;
@@ -264,7 +267,7 @@ FVector AUniPurgeCharacter::VaultOverWall()
 
 void AUniPurgeCharacter::OnCollisionEnter(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector ObjectNormal, const FHitResult& Hit)
 {
-	if( GetCharacterMovement()->MovementMode != MOVE_Walking && ( abs(ObjectNormal.X) > abs(ObjectNormal.Z) || abs(ObjectNormal.Y) > abs(ObjectNormal.Z)))
+	if( GetCharacterMovement()->MovementMode != MOVE_Walking && ( abs(ObjectNormal.X) > abs(ObjectNormal.Z) || abs(ObjectNormal.Y) > abs(ObjectNormal.Z)) &&  !strstr(TCHAR_TO_ANSI(*OtherActor->GetName()), "WorldWall"))
 	{
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 		CollisionNormal = ObjectNormal;
