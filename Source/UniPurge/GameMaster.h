@@ -113,7 +113,8 @@ private:
 
 	bool Losing;
 
-	
+	bool Find(Block block, const int lista[], int size);
+	bool RiverRecursive(Direction direction, int X, int Y, int turnsRemaining);
 
 protected:
 	// Called when the game starts or when spawned
@@ -259,6 +260,9 @@ public:
 	void InitDestroy();
 	bool DestroyWorld(int amount);
 
+	void SetRiver(int X, int Y, Block block);
+	ABaseBlock* GetActor(int X, int Y);
+
 protected:
 	/* Tile map used to guide generation */
 	std::vector<Tile> TileMap;
@@ -303,4 +307,6 @@ private:
 	* @return Pair indicating the X and Y positions of the location
 	*/
 	std::pair<int, int> get_2d(int Pos);
+
+	void RemoveConnections(int X, int Y);
 };

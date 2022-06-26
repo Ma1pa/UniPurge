@@ -282,6 +282,10 @@ void AUniPurgeCharacter::OnCollisionEnter(UPrimitiveComponent* HitComp, AActor* 
 	{
 		StopClimbing();
 	}
+	else if (strstr(TCHAR_TO_ANSI(*OtherActor->GetName()), "WaterBorder"))
+	{
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Swimming);
+	}
 	
 }
 

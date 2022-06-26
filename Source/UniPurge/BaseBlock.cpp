@@ -152,6 +152,7 @@ void ABaseBlock::toggleFloor()
 
 UStaticMesh* ABaseBlock::GetMesh(Block selected)
 {
+	StaticMesh->SetRelativeRotation(FQuat::MakeFromEuler(FVector{0,0,0}));
 	switch (selected)
 	{
 	case Block::ROAD_N:
@@ -214,6 +215,39 @@ UStaticMesh* ABaseBlock::GetMesh(Block selected)
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
 		return ListOfMeshes[4];
 		break;
+	case Block::RIVER_N_E:
+		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
+		return ListOfMeshes[8];
+		break;
+	case Block::RIVER_N_S:
+		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,90 }));
+		return ListOfMeshes[7];
+		break;
+	case Block::RIVER_N_W:
+		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,270 }));
+		return ListOfMeshes[8];
+		break;
+	case Block::RIVER_E_W:
+		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
+		return ListOfMeshes[7];
+		break;
+	case Block::RIVER_S_E:
+		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,90 }));
+		return ListOfMeshes[8];
+		break;
+	case Block::RIVER_S_W:
+		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,180 }));
+		return ListOfMeshes[8];
+		break;
+	case Block::BRIDGE_N_S:
+		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,90 }));
+		return ListOfMeshes[9];
+		break;
+	case Block::BRIDGE_E_W:
+		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
+		return ListOfMeshes[9];
+		break;
+
 	case Block::BUILDING:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
 		return ListOfMeshes[5];

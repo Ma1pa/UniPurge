@@ -33,6 +33,14 @@ void AGameMaster::UpdateNPCRadius(int NewRadius)
 	Generator->UpdateNPCR(NewRadius);
 }
 
+bool AGameMaster::Find(Block block, const int lista[], int size)
+{
+	if (size <= 0)      // check that array size is not null or negative
+		return false;
+	// sort(ints, ints + size); // uncomment this line if array wasn't previously sorted
+	return (std::binary_search(lista, lista + size, (int)block));
+}
+
 // Called when the game starts or when spawned
 void AGameMaster::BeginPlay()
 {
@@ -52,10 +60,11 @@ void AGameMaster::StartGeneration()
 {
 	jugador->SetActorLocation(FVector{ StaticCast<float>(Side /2) * GridToCoordMult, StaticCast<float>(Side /2) * GridToCoordMult,250.0f });
 	Generator->currentPlayerTile = Side / 2 * Side + Side / 2;
-	//We generate the roads
-	GenerateRoads();
 	//We generate the rivers
 	GenerateRivers();
+	//We generate the roads
+	GenerateRoads();
+	
 	//We generate the houses
 	GenerateHouses();
 	//We generate NPCs in the world
@@ -123,9 +132,12 @@ void AGameMaster::GenerateRoads()
 				for (int j = 0; j < Generator->GetPosibilities(Point.first, Point.second); j++)
 				{
 					//We assign weights according to the exits
-					if (op[j] < 12)	dist.push_back(12);
-					else if (op[j] < 16)	dist.push_back(6);
-					else	dist.push_back(1);
+					if (op[j] == 6 || op[j] == 11)	dist.push_back(10);
+					else if (op[j] < 12)	dist.push_back(5);
+					else if (op[j] < 16)	dist.push_back(2);
+					else if (op[j] == 16)	dist.push_back(0.1f);
+					else if (op[j] == 17 || op[j] == 23)	dist.push_back(1);
+					else					dist.push_back(0.2f);
 				}
 				std::discrete_distribution<int> distribution(std::begin(dist), std::end(dist));
 				option = distribution(generator);
@@ -134,8 +146,6 @@ void AGameMaster::GenerateRoads()
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Block = %d"), (int)Generator->GetBlock(Point.first, Point.second));
-		//Old spawning implementation with blueprints
-		//SpawnActor(Generator.GetBlock(Point.first, Point.second), Point.first * GridToCoordMult, Point.second * GridToCoordMult);
 		if (Generator->GetBlock(Point.first, Point.second) != Block::EMPTY)
 			GenerarActor(Generator->GetBlock(Point.first, Point.second), Point.first, Point.second);
 
@@ -154,7 +164,119 @@ void AGameMaster::GenerateRoads()
 
 void AGameMaster::GenerateRivers()
 {
-	//TODO
+	int amountOfRivers = Side / 10 < 1 ? 1 : Side / 10;
+	for (int river = 0; river < amountOfRivers; river++)
+	{
+		//If vertical X = 0
+		int startingPoint = -1;
+		int riverTurns = generator() % Side/10 <1 ? 2: (Side/10)*2;
+		//Select starting point
+		do
+		{
+			startingPoint = generator() % Side;
+		} while (	Find(Generator->GetBlock(0, startingPoint), AllRivers, std::size(AllRivers)));
+		//Generator->SetRiver(0, startingPoint, Block::BRIDGE_N_S);
+		if(RiverRecursive(Direction::NORTH, 0, startingPoint, riverTurns))
+			UE_LOG(LogTemp, Warning, TEXT("Pongo un rio"));
+	}
+}
+
+bool AGameMaster::RiverRecursive(Direction direction, int X, int Y, int turnsRemaining)
+{
+	if (X >= Side || Y < 0 || Y >= Side)	return true;
+	if (Find(Generator->GetBlock(X, Y), AllRivers, std::size(AllRivers)))	return false;
+	std::discrete_distribution<int> probability({ 1.0*X,0.5*X });
+	std::discrete_distribution<int> bridgeChances({ 1,0.5});
+	switch (direction)
+	{
+	case Direction::NORTH:
+		//A river going north is imposible in this position
+		if (Y < 0 || Y >= Side)
+			return false;
+		//Check if we want to turn
+		if(turnsRemaining > 0 && probability(generator))
+		{
+			//Decide where to turn
+			if (generator() % 2 > 0)
+			{
+				//Turn East
+				if (RiverRecursive(Direction::EAST, X, Y + 1, turnsRemaining-1))
+				{
+					Generator->SetRiver(X, Y, Block::RIVER_S_E);
+					return true;
+				}
+			}
+			if (RiverRecursive(Direction::WEST, X, Y - 1, turnsRemaining-1))
+			{
+				Generator->SetRiver(X, Y, Block::RIVER_S_W);
+				return true;
+			}
+		}
+		//Go north
+		if (RiverRecursive(Direction::NORTH, X + 1, Y, turnsRemaining))
+		{
+			if(bridgeChances(generator))
+				Generator->SetRiver(X, Y, Block::BRIDGE_N_S);
+			else
+				Generator->SetRiver(X, Y, Block::RIVER_N_S);
+			return true;
+		}
+		return false;
+		break;
+	case Direction::EAST:
+		//A river going East is imposible in this position
+		if (Y < 0 || Y >= Side)
+			return false;
+		//Check if we want to turn
+		if (probability(generator))
+		{
+			//Turn North
+			if (RiverRecursive(Direction::NORTH, X+1, Y, turnsRemaining))
+			{
+				Generator->SetRiver(X, Y, Block::RIVER_N_W);
+				return true;
+			}
+		}
+		//Go east
+		if (RiverRecursive(Direction::EAST, X, Y + 1, turnsRemaining))
+		{
+			if(bridgeChances(generator))
+				Generator->SetRiver(X, Y, Block::BRIDGE_E_W);
+			else
+				Generator->SetRiver(X, Y, Block::RIVER_E_W);
+			return true;
+		}
+		return false;
+		break;
+	case Direction::WEST:
+		//A river going East is imposible in this position
+		if (Y < 0 || Y >= Side)
+			return false;
+		//Check if we want to turn
+		if (probability(generator))
+		{
+			//Turn North
+			if (RiverRecursive(Direction::NORTH, X + 1, Y, turnsRemaining))
+			{
+				Generator->SetRiver(X, Y, Block::RIVER_N_E);
+				return true;
+			}
+		}
+		//Go West
+		if (RiverRecursive(Direction::WEST, X, Y - 1, turnsRemaining))
+		{
+			if (bridgeChances(generator))
+				Generator->SetRiver(X, Y, Block::BRIDGE_E_W);
+			else
+				Generator->SetRiver(X, Y, Block::RIVER_E_W);
+			return true;
+		}
+		return false;
+		break;
+	default:
+		return false;
+		break;
+	}
 }
 
 void AGameMaster::GenerateHouses()
@@ -277,9 +399,16 @@ void AGameMaster::GenerarActor(Block ChosenRoad, int XPosition, int YPosition)
 {
 	const FVector Location = {StaticCast<float>(XPosition * GridToCoordMult), StaticCast<float>(YPosition * GridToCoordMult), 10.0};
 	const FRotator Rotation = GetActorRotation();
-	ABaseBlock* actor = GetWorld()->SpawnActor<ABaseBlock>(ActorToSpawn, Location, Rotation);
-	std::discrete_distribution<int> alt({ 1,1.5 });
-	Generator->AddAgent(XPosition, YPosition, actor, alt(generator) != 0);
+	ABaseBlock* actor;
+	if (Generator->GetActor(XPosition, YPosition) == nullptr)
+	{
+		actor = GetWorld()->SpawnActor<ABaseBlock>(ActorToSpawn, Location, Rotation);
+		std::discrete_distribution<int> alt({ 1,1.5 });
+		Generator->AddAgent(XPosition, YPosition, actor, ((ChosenRoad < Block::RIVER_N_S || ChosenRoad >= Block::BUILDING) && alt(generator) != 0));
+	}
+	else
+		actor = Generator->GetActor(XPosition, YPosition);
+	
 	if(ChosenRoad == Block::BUILDING)
 		Actualizar.push(actor);
 	else

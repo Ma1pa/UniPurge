@@ -16,7 +16,7 @@ WorldGenerator::WorldGenerator(int RR, int H, AGameMaster* mast)
 	{
 		TileMap.push_back(Tile());
 		TileMap[i].Location = i;
-		TileMap[i].posibilities.assign(AllRoads, AllRoads + 12);
+		TileMap[i].posibilities.assign(AllRoads, AllRoads + 14);
 		//TileMap[i].posibilities.assign(AllSimpleRoads, AllSimpleRoads + 7);
 		//for (int j = 0; j < 16; j++)
 		//	TileMap[i].posibilities.push_back(j+1);
@@ -40,10 +40,11 @@ std::pair<int, int> WorldGenerator::GetLessEntropy()
 	int bestPosition = 0;
 	for (int i = 1; i < TileMap.size(); i++)
 	{
-		//The position selected has to be Nothing and have the minimal size
+
+		//The position selected has to be Nothing and have the minimal size or be a straight river
 		if ((TileMap[i].block == Block::NOTHING &&
 			TileMap[i].posibilities.size() < TileMap[bestPosition].posibilities.size()) || 
-			TileMap[bestPosition].block != Block::NOTHING)
+			(TileMap[bestPosition].block != Block::NOTHING))
 			bestPosition = i;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("Best Position = %d Block = %d"), bestPosition,(int)TileMap[bestPosition].block);
@@ -63,6 +64,7 @@ void WorldGenerator::CollapseList(int X, int Y, int chosen)
 		else if (Y < (Side - 1) && RoadInDirection(TileMap[get_1d(X, Y + 1)].block, Direction::WEST))	CollapseOptions(X, Y, 4);
 		//West
 		else if (Y > 0 && RoadInDirection(TileMap[get_1d(X, Y - 1)].block, Direction::EAST))	CollapseOptions(X, Y, 5);
+		else CollapseOptions(X, Y, 1);
 	}
 	else
 		CollapseOptions(X, Y, TileMap[get_1d(X, Y)].posibilities[chosen]);
@@ -377,4 +379,202 @@ bool WorldGenerator::DestroyWorld(int amount)
 		}
 	}
 	return false;
+}
+
+void WorldGenerator::RemoveConnections(int X, int Y)
+{
+	std::vector<int> options;
+	std::vector<int> rest;
+	//Norte
+	if (X + 1 < Side)
+	{
+		options.clear();
+		rest.clear();
+		std::set_intersection(std::begin(AllSouth), std::end(AllSouth), TileMap[get_1d(X + 1, Y)].posibilities.begin(), TileMap[get_1d(X + 1, Y)].posibilities.end(), back_inserter(options));
+
+		//We remove those posibilities from the current ones
+		std::set_symmetric_difference(TileMap[get_1d(X + 1, Y)].posibilities.begin(), TileMap[get_1d(X + 1, Y)].posibilities.end(),
+			options.begin(), options.end(), std::back_inserter(rest));
+		TileMap[get_1d(X + 1, Y)].posibilities = rest;
+	}
+	//Sur
+	if (X - 1 >= 0)
+	{
+		options.clear();
+		rest.clear();
+		std::set_intersection(std::begin(AllNorth), std::end(AllNorth), TileMap[get_1d(X - 1, Y)].posibilities.begin(), TileMap[get_1d(X - 1, Y)].posibilities.end(), back_inserter(options));
+
+		//We remove those posibilities from the current ones
+		std::set_symmetric_difference(TileMap[get_1d(X - 1, Y)].posibilities.begin(), TileMap[get_1d(X - 1, Y)].posibilities.end(),
+			options.begin(), options.end(), std::back_inserter(rest));
+		TileMap[get_1d(X - 1, Y)].posibilities = rest;
+	}
+	//Este
+	if (X + 1 < Side)
+	{
+		options.clear();
+		rest.clear();
+		std::set_intersection(std::begin(AllWest), std::end(AllWest), TileMap[get_1d(X, Y + 1)].posibilities.begin(), TileMap[get_1d(X, Y + 1)].posibilities.end(), back_inserter(options));
+
+		//We remove those posibilities from the current ones
+		std::set_symmetric_difference(TileMap[get_1d(X, Y + 1)].posibilities.begin(), TileMap[get_1d(X, Y + 1)].posibilities.end(),
+			options.begin(), options.end(), std::back_inserter(rest));
+		TileMap[get_1d(X, Y + 1)].posibilities = rest;
+	}
+	//Oeste
+	if (X - 1 >= 0)
+	{
+		options.clear();
+		rest.clear();
+		std::set_intersection(std::begin(AllEast), std::end(AllEast), TileMap[get_1d(X, Y - 1)].posibilities.begin(), TileMap[get_1d(X, Y - 1)].posibilities.end(), back_inserter(options));
+
+		//We remove those posibilities from the current ones
+		std::set_symmetric_difference(TileMap[get_1d(X, Y - 1)].posibilities.begin(), TileMap[get_1d(X, Y - 1)].posibilities.end(),
+			options.begin(), options.end(), std::back_inserter(rest));
+		TileMap[get_1d(X, Y - 1)].posibilities = rest;
+	}
+}
+
+void WorldGenerator::SetRiver(int X, int Y, Block block)
+{
+	std::vector<int> options;
+	//Change pos of adjacent tiles
+	switch (block)
+	{
+	case Block::RIVER_N_S:
+		//Conectar con puentes adyacentes
+		if ((Y+1 < Side && TileMap[get_1d(X, Y + 1)].block == Block::BRIDGE_N_S) ||
+			(Y-1 >= 0 && TileMap[get_1d(X, Y - 1)].block == Block::BRIDGE_N_S))
+		{
+			SetRiver(X, Y, Block::BRIDGE_N_S);
+			return;
+		}
+		//Si no hay puentes adyacentes quitamos conexiones
+		RemoveConnections(X, Y);
+		break;
+	case Block::RIVER_N_E:
+		//Desconectar puentes adyacentes
+		//Sur
+		if (X-1 >= 0 && TileMap[get_1d(X-1, Y)].block == Block::BRIDGE_E_W)
+			SetRiver(X-1, Y, Block::RIVER_E_W);
+		//Oeste
+		if (Y - 1 >= 0 && TileMap[get_1d(X, Y - 1)].block == Block::BRIDGE_N_S)
+			SetRiver(X, Y - 1, Block::RIVER_N_S);
+		//Si no hay puentes adyacentes quitamos conexiones
+		RemoveConnections(X, Y);
+		break;
+	case Block::RIVER_N_W:
+		//Desconectar puentes adyacentes
+		//Sur
+		if (X - 1 >= 0 && TileMap[get_1d(X - 1, Y)].block == Block::BRIDGE_E_W)
+			SetRiver(X - 1, Y, Block::RIVER_E_W);
+		//Este
+		if (Y + 1 < Side && TileMap[get_1d(X, Y + 1)].block == Block::BRIDGE_N_S)
+			SetRiver(X, Y + 1, Block::RIVER_N_S);
+		//Si no hay puentes adyacentes quitamos conexiones
+		RemoveConnections(X, Y);
+		break;
+	case Block::RIVER_S_E:
+		//Desconectar puentes adyacentes
+		//Norte
+		if (X + 1 >= 0 && TileMap[get_1d(X + 1, Y)].block == Block::BRIDGE_E_W)
+			SetRiver(X + 1, Y, Block::RIVER_E_W);
+		//Oeste
+		if (Y - 1 >= 0 && TileMap[get_1d(X, Y - 1)].block == Block::BRIDGE_N_S)
+			SetRiver(X, Y - 1, Block::RIVER_N_S);
+		//Si no hay puentes adyacentes quitamos conexiones
+		RemoveConnections(X, Y);
+		break;
+	case Block::RIVER_S_W:
+		//Desconectar puentes adyacentes
+		//Norte
+		if (X + 1 >= 0 && TileMap[get_1d(X + 1, Y)].block == Block::BRIDGE_E_W)
+			SetRiver(X + 1, Y, Block::RIVER_E_W);
+		//Este
+		if (Y + 1 < Side && TileMap[get_1d(X, Y + 1)].block == Block::BRIDGE_N_S)
+			SetRiver(X, Y + 1, Block::RIVER_N_S);
+		//Si no hay puentes adyacentes quitamos conexiones
+		RemoveConnections(X, Y);
+		break;
+	case Block::RIVER_E_W:
+		//Conectar con puentes adyacentes
+		if ((X + 1 < Side && TileMap[get_1d(X+1, Y)].block == Block::BRIDGE_E_W) ||
+			(X - 1 >= 0 && TileMap[get_1d(X-1, Y)].block == Block::BRIDGE_E_W))
+		{
+			SetRiver(X, Y, Block::BRIDGE_E_W);
+			return;
+		}
+		//Si no hay puentes adyacentes quitamos conexiones
+		RemoveConnections(X, Y);
+		break;
+	case Block::BRIDGE_N_S:
+		//Check for adjacents
+		if (TileMap[get_1d(X, Y + 1)].block == Block::RIVER_N_S)	SetRiver(X, Y + 1, Block::BRIDGE_N_S);
+		if (TileMap[get_1d(X, Y - 1)].block == Block::RIVER_N_S)	SetRiver(X, Y - 1, Block::BRIDGE_N_S);
+
+		if ((TileMap[get_1d(X, Y + 1)].block != Block::BRIDGE_N_S && std::find(std::begin(AllRivers), std::end(AllRivers), (int)TileMap[get_1d(X, Y + 1)].block) != std::end(AllRivers)) ||
+			(TileMap[get_1d(X, Y - 1)].block != Block::BRIDGE_N_S && std::find(std::begin(AllRivers), std::end(AllRivers), (int)TileMap[get_1d(X, Y - 1)].block) != std::end(AllRivers)))
+		{
+			SetRiver(X, Y, Block::RIVER_N_S);
+			return;
+		}
+
+		//Este
+		if (Y + 1 < Side)
+		{
+			options.clear();
+			std::set_intersection(std::begin(AllWest), std::end(AllWest), TileMap[get_1d(X, Y + 1)].posibilities.begin(), TileMap[get_1d(X, Y + 1)].posibilities.end(), back_inserter(options));
+
+			TileMap[get_1d(X, Y + 1)].posibilities = options;
+		}
+		//Oeste
+		if (Y - 1 >= 0)
+		{
+			options.clear();
+			std::set_intersection(std::begin(AllEast), std::end(AllEast), TileMap[get_1d(X, Y - 1)].posibilities.begin(), TileMap[get_1d(X, Y - 1)].posibilities.end(), back_inserter(options));
+
+			TileMap[get_1d(X, Y - 1)].posibilities = options;
+		}
+		break;
+	case Block::BRIDGE_E_W:
+		//Check for adjacents
+		if (TileMap[get_1d(X + 1, Y)].block == Block::RIVER_E_W)	SetRiver(X + 1, Y, Block::BRIDGE_E_W);
+		if (TileMap[get_1d(X - 1, Y)].block == Block::RIVER_E_W)	SetRiver(X - 1, Y, Block::BRIDGE_E_W);
+
+		if ((TileMap[get_1d(X + 1, Y)].block != Block::BRIDGE_E_W && std::find(std::begin(AllRivers), std::end(AllRivers), (int)TileMap[get_1d(X + 1, Y)].block) != std::end(AllRivers)) ||
+			(TileMap[get_1d(X - 1, Y)].block != Block::BRIDGE_E_W && std::find(std::begin(AllRivers), std::end(AllRivers), (int)TileMap[get_1d(X - 1, Y)].block) != std::end(AllRivers)))
+		{
+			SetRiver(X, Y, Block::RIVER_E_W);
+			return;
+		}
+
+		//Norte
+		if (X + 1 < Side)
+		{
+			options.clear();
+			std::set_intersection(std::begin(AllSouth), std::end(AllSouth), TileMap[get_1d(X + 1, Y)].posibilities.begin(), TileMap[get_1d(X + 1, Y)].posibilities.end(), back_inserter(options));
+
+			TileMap[get_1d(X + 1, Y)].posibilities = options;
+		}
+		//Sur
+		if (X - 1 >= 0)
+		{
+			options.clear();
+			std::set_intersection(std::begin(AllNorth), std::end(AllNorth), TileMap[get_1d(X - 1, Y)].posibilities.begin(), TileMap[get_1d(X - 1, Y)].posibilities.end(), back_inserter(options));
+
+			TileMap[get_1d(X - 1, Y)].posibilities = options;
+		}
+		break;
+	default:
+		break;
+	}
+	TileMap[get_1d(X, Y)].block = block;
+	TileMap[get_1d(X, Y)].hasNPC = false;
+	TileMap[get_1d(X, Y)].posibilities = { (int)block };
+	master->GenerarActor(TileMap[get_1d(X, Y)].block, X, Y);
+}
+
+ABaseBlock* WorldGenerator::GetActor(int X, int Y)
+{
+	return TileMap[get_1d(X, Y)].agent;
 }

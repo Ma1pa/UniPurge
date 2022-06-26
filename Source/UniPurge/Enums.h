@@ -26,8 +26,16 @@ enum class Block : uint8
 	ROAD_N_E_W UMETA(DisplayName = "Road North-East-West"),			//14
 	ROAD_S_E_W UMETA(DisplayName = "Road South-East-West"),			//15
 	ROAD_N_S_E_W  UMETA(DisplayName = "Road Cross"),				//16
-	BUILDING UMETA(DisplayName = "Building"),						//17
-	PARK UMETA(DisplayName = "Park")								//18
+	RIVER_N_S UMETA(DisplayName = "River North-South"),				//17
+	BRIDGE_N_S UMETA(DisplayName = "Bridge North-South"),			//18
+	RIVER_N_E UMETA(DisplayName = "River North-East"),				//19
+	RIVER_N_W UMETA(DisplayName = "River North-West"),				//20
+	RIVER_S_E UMETA(DisplayName = "River South-East"),				//21
+	RIVER_S_W UMETA(DisplayName = "River South-West"),				//22
+	RIVER_E_W UMETA(DisplayName = "River East-West"),				//23
+	BRIDGE_E_W UMETA(DisplayName = "Bridge East-West"),				//24
+	BUILDING UMETA(DisplayName = "Building"),						//25
+	PARK UMETA(DisplayName = "Park")								//26
 };
 
 UENUM(BlueprintType)
@@ -48,13 +56,16 @@ enum class Connections : uint8
 	NOTHING
 };
 
-static int AllBlocks[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17};
-static int AllRoads[]{ 1,6,7,8,9,10,11,12,13,14,15,16 };
+static int AllBlocks[] {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26};
+static int AllRoads[]{ 1,6,7,8,9,10,11,12,13,14,15,16,18,24 };
 static int AllSimpleRoads[]{ 1,6,7,8,9,10,11 };
-static int AllNorth[7]{ 6,7,8,12,13,14,16 };
-static int AllSouth[7]{ 6,9,10,12,13,15,16 };
-static int AllEast[7]{ 7,9,11,12,14,15,16 };
-static int AllWest[7]{ 8,10,11,13,14,15,16 };
+static int AllNorth[8]{ 6,7,8,12,13,14,16,24 };
+static int AllSouth[8]{ 6,9,10,12,13,15,16,24 };
+static int AllEast[8]{ 7,9,11,12,14,15,16,18 };
+static int AllWest[8]{ 8,10,11,13,14,15,16,18 };
+
+//Rivers
+static int AllRivers[]{ 17,18,19,20,21,22,23,24 };
 
 static const int GridToCoordMult = 800;
 
