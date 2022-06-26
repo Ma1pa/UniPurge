@@ -6,7 +6,6 @@
 #include <UniPurge/BasicNPC.h>
 
 
-
 // Sets default values
 AGameMaster::AGameMaster()
 {
@@ -40,6 +39,7 @@ void AGameMaster::BeginPlay()
 	UE_LOG(LogTemp, Warning, TEXT("Inicio Juego"));
 	//(Generator)->~WorldGenerator();   //call the destructor explicitly
 	Generator = new WorldGenerator(StaticCast<int>(RadiusOfSpawn), Side, this);
+	Losing = false;
 	
 	Super::BeginPlay();
 	StartGeneration();
@@ -376,4 +376,30 @@ void AGameMaster::UpdateAsync(int amount)
 {
 	if (Generator->isUpdating)
 		Generator->UpdateAdditions(amount);
+	if (Losing)
+	{
+		if (Generator->DestroyWorld(amount))
+		{
+			Losing = false;
+			ReturnToMenu(false);
+		}
+			
+	}
+}
+
+void AGameMaster::LoseGame()
+{
+	for (int i = 0; i < NPCsActivos.Num(); i++)
+	{
+		NPCsActivos[i]->active = false;
+	}
+	Generator->InitDestroy();
+	Losing = true;
+}
+
+void AGameMaster::WinGame(AActor* player, AActor* NPC)
+{
+	player->SetActorHiddenInGame(true);
+	NPC->Destroy();
+	ReturnToMenu(true);
 }

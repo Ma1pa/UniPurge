@@ -264,3 +264,10 @@ void ABaseBlock::UpdateAdditionsBuilding(int element)
 		break;
 	}
 }
+
+void ABaseBlock::Remove()
+{
+	if (blockUp != nullptr)
+		blockUp->Remove();
+	Destroy();
+}

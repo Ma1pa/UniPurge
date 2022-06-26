@@ -267,6 +267,8 @@ FVector AUniPurgeCharacter::VaultOverWall()
 
 void AUniPurgeCharacter::OnCollisionEnter(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector ObjectNormal, const FHitResult& Hit)
 {
+	EndGame(OtherActor);
+
 	if( GetCharacterMovement()->MovementMode != MOVE_Walking && ( abs(ObjectNormal.X) > abs(ObjectNormal.Z) || abs(ObjectNormal.Y) > abs(ObjectNormal.Z)) &&  !strstr(TCHAR_TO_ANSI(*OtherActor->GetName()), "WorldWall"))
 	{
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
@@ -329,7 +331,10 @@ void AUniPurgeCharacter::InShift(float deltaTime)
 			else if(Hit.Actor != selectedTrap)
 			{
 				selectedTrap->SetActorLocation(GetActorLocation());
-				selectedTrap->SetActorRelativeRotation(GetActorRotation());
+				FRotator rotator = GetViewRotation();
+				rotator.Pitch = 0;
+				rotator.Roll = 0;
+				selectedTrap->SetActorRelativeRotation(rotator);
 				selectedTrap->SetActorLocation(Hit.Location, true);
 				TrapToFloor();
 				

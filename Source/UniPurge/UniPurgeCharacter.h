@@ -81,6 +81,9 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FVector CollisionNormal;
 
+	UFUNCTION(BlueprintImplementableEvent)
+		void EndGame(AActor* actorThatHit);
+
 
 private:
 	

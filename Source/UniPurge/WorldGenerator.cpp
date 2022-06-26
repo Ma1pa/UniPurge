@@ -354,3 +354,27 @@ void WorldGenerator::UpdateAdditions(int amount)
 		}
 	}
 }
+
+void WorldGenerator::InitDestroy()
+{
+	initialDestroy = std::rand() % TileMap.size();
+	currentDestroy = initialDestroy;
+}
+
+bool WorldGenerator::DestroyWorld(int amount)
+{
+		
+	//Call a function in all tiles
+	for (int i = 0; i < amount; i++)
+	{
+		TileMap[currentDestroy].agent->Remove();
+		currentDestroy++;
+		if (currentDestroy >= TileMap.size() - 1)
+			currentDestroy = 0;
+		if (initialDestroy == currentDestroy)
+		{
+			return true;
+		}
+	}
+	return false;
+}

@@ -83,6 +83,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 		void UpdateAsync(int amount);
 
+	UFUNCTION(BlueprintCallable)
+		void LoseGame();
+	UFUNCTION(BlueprintCallable)
+		void WinGame(AActor* player, AActor* NPC);
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+		void ReturnToMenu(bool win);
+
 private:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
@@ -102,6 +110,8 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	TArray<ABasicNPC*> NPCsActivos;
+
+	bool Losing;
 
 	
 
@@ -246,6 +256,9 @@ public:
 	void LoadUpdates();
 	bool isUpdating;
 
+	void InitDestroy();
+	bool DestroyWorld(int amount);
+
 protected:
 	/* Tile map used to guide generation */
 	std::vector<Tile> TileMap;
@@ -266,6 +279,8 @@ private:
 
 	int initialUpdate;
 	int currentUpdate;
+	int initialDestroy;
+	int currentDestroy;
 	int RenderDistance;
 	int NPCRadius;
 

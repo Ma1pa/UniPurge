@@ -75,6 +75,8 @@ public:
 
 	void toggleFloor();
 
+	void Remove();
+
 private:
 	Connections horizontalExits[4]{Connections::NOTHING};
 	Block currentBlock;
