@@ -14,9 +14,6 @@ AGameMaster::AGameMaster()
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
 	RootComponent = StaticMesh;
 	
-	
-	seed = std::rand();
-	generator.seed(seed);
 	WorldGenerator Gen = WorldGenerator();
 	Generator = &Gen;
 	//generator.seed(1);
@@ -50,6 +47,9 @@ void AGameMaster::BeginPlay()
 	Losing = false;
 	
 	Super::BeginPlay();
+	std::default_random_engine newEngine;
+	generator = newEngine;
+	generator.seed(seed);
 	StartGeneration();
 	Generator->Side = Side;
 	
@@ -110,7 +110,7 @@ void AGameMaster::GenerateRoads()
 		std::pair<int, int> Point = Generator->GetLessEntropy();
 		UE_LOG(LogTemp, Warning, TEXT("Position (%d, %d)"), Point.first, Point.second);
 		//We chose if we put empty or not 50%
-		std::discrete_distribution<int> var({ 1,0.3 });
+		std::discrete_distribution<int> var({ 1,0.7 });
 		int option = var(generator);
 		//int option = 0;
 		//Check if an empty is possible

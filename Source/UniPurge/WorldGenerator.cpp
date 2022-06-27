@@ -369,7 +369,8 @@ bool WorldGenerator::DestroyWorld(int amount)
 	//Call a function in all tiles
 	for (int i = 0; i < amount; i++)
 	{
-		TileMap[currentDestroy].agent->Remove();
+		if(TileMap[currentDestroy].agent != nullptr)
+			TileMap[currentDestroy].agent->Remove();
 		currentDestroy++;
 		if (currentDestroy >= TileMap.size() - 1)
 			currentDestroy = 0;
@@ -437,14 +438,16 @@ void WorldGenerator::RemoveConnections(int X, int Y)
 
 void WorldGenerator::SetRiver(int X, int Y, Block block)
 {
+	TileMap[get_1d(X, Y)].block = block;
+	TileMap[get_1d(X, Y)].posibilities = { (int)block };
 	std::vector<int> options;
 	//Change pos of adjacent tiles
 	switch (block)
 	{
 	case Block::RIVER_N_S:
 		//Conectar con puentes adyacentes
-		if ((Y+1 < Side && TileMap[get_1d(X, Y + 1)].block == Block::BRIDGE_N_S) ||
-			(Y-1 >= 0 && TileMap[get_1d(X, Y - 1)].block == Block::BRIDGE_N_S))
+		if (((Y + 1 < Side && TileMap[get_1d(X, Y + 1)].block == Block::BRIDGE_N_S) && (TileMap[get_1d(X, Y - 1)].block == Block::BRIDGE_N_S || std::find(std::begin(AllRivers), std::end(AllRivers), (int)TileMap[get_1d(X, Y - 1)].block) == std::end(AllRivers))) ||
+			((Y - 1 >= 0 && TileMap[get_1d(X, Y - 1)].block == Block::BRIDGE_N_S) && (TileMap[get_1d(X, Y + 1)].block == Block::BRIDGE_N_S || std::find(std::begin(AllRivers), std::end(AllRivers), (int)TileMap[get_1d(X, Y + 1)].block) == std::end(AllRivers))))
 		{
 			SetRiver(X, Y, Block::BRIDGE_N_S);
 			return;
@@ -498,8 +501,8 @@ void WorldGenerator::SetRiver(int X, int Y, Block block)
 		break;
 	case Block::RIVER_E_W:
 		//Conectar con puentes adyacentes
-		if ((X + 1 < Side && TileMap[get_1d(X+1, Y)].block == Block::BRIDGE_E_W) ||
-			(X - 1 >= 0 && TileMap[get_1d(X-1, Y)].block == Block::BRIDGE_E_W))
+		if (((X + 1 < Side && TileMap[get_1d(X+1, Y)].block == Block::BRIDGE_E_W) && (TileMap[get_1d(X - 1, Y)].block == Block::BRIDGE_E_W || std::find(std::begin(AllRivers), std::end(AllRivers), (int)TileMap[get_1d(X - 1, Y)].block) == std::end(AllRivers))) ||
+			((X - 1 >= 0 && TileMap[get_1d(X-1, Y)].block == Block::BRIDGE_E_W) && (TileMap[get_1d(X + 1, Y)].block == Block::BRIDGE_E_W || std::find(std::begin(AllRivers), std::end(AllRivers), (int)TileMap[get_1d(X + 1, Y)].block) == std::end(AllRivers))))
 		{
 			SetRiver(X, Y, Block::BRIDGE_E_W);
 			return;
@@ -568,9 +571,6 @@ void WorldGenerator::SetRiver(int X, int Y, Block block)
 	default:
 		break;
 	}
-	TileMap[get_1d(X, Y)].block = block;
-	TileMap[get_1d(X, Y)].hasNPC = false;
-	TileMap[get_1d(X, Y)].posibilities = { (int)block };
 	master->GenerarActor(TileMap[get_1d(X, Y)].block, X, Y);
 }
 

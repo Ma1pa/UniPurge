@@ -91,6 +91,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 		void ReturnToMenu(bool win);
 
+	UPROPERTY(BlueprintReadWrite)
+		int seed;
+
 private:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
@@ -106,7 +109,6 @@ private:
 	const int AverageGroup = 4;
 
 	std::queue<ABaseBlock*> Actualizar;
-	int seed;
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	TArray<ABasicNPC*> NPCsActivos;
