@@ -408,11 +408,105 @@ void AGameMaster::GenerarActor(Block ChosenRoad, int XPosition, int YPosition)
 	}
 	else
 		actor = Generator->GetActor(XPosition, YPosition);
-	
-	if(ChosenRoad == Block::BUILDING)
+
+	//Is a road
+	if(ChosenRoad <= Block::ROAD_N_S_E_W)
+		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition), GetMesh(ChosenRoad),Trash,Drainage,Mail,Sewer,Lights,TrafficLight);
+	//Is a river
+	else if (ChosenRoad < Block::BUILDING)
+		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition), GetMesh(ChosenRoad),Drain,FishingPole,Rock,FloatingTrash,Supports,Ship);
+	//Is a building
+	if (ChosenRoad == Block::BUILDING)
 		Actualizar.push(actor);
+	//Is a park
 	else
-		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition));
+		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition), GetMesh(ChosenRoad), Trees, Picnic, Grass, Chair, Bush, Fence);
+		
+}
+
+UStaticMesh* AGameMaster::GetMesh(Block block)
+{
+	switch (block)
+	{
+	case Block::ROAD_N:
+		return ListOfMeshes[0];
+		break;
+	case Block::ROAD_S:
+		return ListOfMeshes[0];
+		break;
+	case Block::ROAD_E:
+		return ListOfMeshes[0];
+		break;
+	case Block::ROAD_W:
+		return ListOfMeshes[0];
+		break;
+	case Block::ROAD_N_S:
+		return ListOfMeshes[1];
+		break;
+	case Block::ROAD_N_E:
+		return ListOfMeshes[2];
+		break;
+	case Block::ROAD_N_W:
+		return ListOfMeshes[2];
+		break;
+	case Block::ROAD_S_E:
+		return ListOfMeshes[2];
+		break;
+	case Block::ROAD_S_W:
+		return ListOfMeshes[2];
+		break;
+	case Block::ROAD_E_W:
+		return ListOfMeshes[1];
+		break;
+	case Block::ROAD_N_S_E:
+		return ListOfMeshes[3];
+		break;
+	case Block::ROAD_N_S_W:
+		return ListOfMeshes[3];
+		break;
+	case Block::ROAD_N_E_W:
+		return ListOfMeshes[3];
+		break;
+	case Block::ROAD_S_E_W:
+		return ListOfMeshes[3];
+		break;
+	case Block::ROAD_N_S_E_W:
+		return ListOfMeshes[4];
+		break;
+	case Block::RIVER_N_S:
+		return ListOfMeshes[6];
+		break;
+	case Block::BRIDGE_N_S:
+		return ListOfMeshes[8];
+		break;
+	case Block::RIVER_N_E:
+		return ListOfMeshes[7];
+		break;
+	case Block::RIVER_N_W:
+		return ListOfMeshes[7];
+		break;
+	case Block::RIVER_S_E:
+		return ListOfMeshes[7];
+		break;
+	case Block::RIVER_S_W:
+		return ListOfMeshes[7];
+		break;
+	case Block::RIVER_E_W:
+		return ListOfMeshes[6];
+		break;
+	case Block::BRIDGE_E_W:
+		return ListOfMeshes[8];
+		break;
+	case Block::BUILDING:
+		return BlockMeshes[0];
+		break;
+	case Block::PARK:
+		return ListOfMeshes[5];
+		break;
+	default:
+		return nullptr;
+		break;
+	}
 }
 
 void AGameMaster::ActualizarActor(ABaseBlock* actor, int X, int Y)
@@ -424,7 +518,7 @@ void AGameMaster::ActualizarActor(ABaseBlock* actor, int X, int Y)
 						Generator->CompareGroup(X, Y + 1, group),
 						Generator->CompareGroup(X - 1, Y, group),
 						Generator->CompareGroup(X, Y - 1, group));
-	actor->SetStats(Generator->GetBlock(X, Y), Generator->GetHeight(X, Y));
+	actor->SetStats(Generator->GetBlock(X, Y), Generator->GetHeight(X, Y), BlockMeshes[generator()%BlockMeshes.Num()], BlockWall,OpenWall,DoorWall, ConectorWall,Floor,FloorMeshes);
 	
 	actor->UpdateBuilding();
 }

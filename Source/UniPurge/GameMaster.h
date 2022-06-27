@@ -94,6 +94,74 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 		int seed;
 
+	//Meshes for block
+	UPROPERTY(EditAnywhere, Category = "Blocks|Generic", BlueprintReadWrite)
+		TArray<UStaticMesh*> ListOfMeshes;
+	//Building
+	UPROPERTY(EditAnywhere, Category = "Blocks|Building", BlueprintReadWrite)
+		TArray<UStaticMesh*> BlockMeshes;
+
+	UPROPERTY(EditAnywhere, Category = "Blocks|Building", BlueprintReadWrite)
+		TArray<UStaticMesh*> Floor;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Building", BlueprintReadWrite)
+		TArray<UStaticMesh*> BlockWall;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Building", BlueprintReadWrite)
+		TArray<UStaticMesh*> OpenWall;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Building", BlueprintReadWrite)
+		TArray<UStaticMesh*> DoorWall;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Building", BlueprintReadWrite)
+		TArray<UStaticMesh*> ConectorWall;
+
+	UPROPERTY(EditAnywhere, Category = "Blocks|Building", BlueprintReadWrite)
+		TArray<UStaticMesh*> FloorMeshes;
+
+	//Park
+	UPROPERTY(EditAnywhere, Category = "Blocks|Park", BlueprintReadWrite)
+		TArray<UStaticMesh*> Trees;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Park", BlueprintReadWrite)
+		TArray<UStaticMesh*> Picnic;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Park", BlueprintReadWrite)
+		TArray<UStaticMesh*> Grass;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Park", BlueprintReadWrite)
+		TArray<UStaticMesh*> Chair;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Park", BlueprintReadWrite)
+		TArray<UStaticMesh*> Bush;
+
+	UPROPERTY(EditAnywhere, Category = "Blocks|Park", BlueprintReadWrite)
+		TArray<UStaticMesh*> Fence;
+
+	//Road
+	UPROPERTY(EditAnywhere, Category = "Blocks|Road", BlueprintReadWrite)
+		TArray<UStaticMesh*> Trash;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Road", BlueprintReadWrite)
+		TArray<UStaticMesh*> Drainage;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Road", BlueprintReadWrite)
+		TArray<UStaticMesh*> Mail;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Road", BlueprintReadWrite)
+		TArray<UStaticMesh*> Sewer;
+	UPROPERTY(EditAnywhere, Category = "Blocks|Road", BlueprintReadWrite)
+		TArray<UStaticMesh*> Lights;
+
+	UPROPERTY(EditAnywhere, Category = "Blocks|Road", BlueprintReadWrite)
+		TArray<UStaticMesh*> TrafficLight;
+
+	//River
+	UPROPERTY(EditAnywhere, Category = "Blocks|River", BlueprintReadWrite)
+		TArray<UStaticMesh*> Drain;
+	UPROPERTY(EditAnywhere, Category = "Blocks|River", BlueprintReadWrite)
+		TArray<UStaticMesh*> FishingPole;
+	UPROPERTY(EditAnywhere, Category = "Blocks|River", BlueprintReadWrite)
+		TArray<UStaticMesh*> Rock;
+	UPROPERTY(EditAnywhere, Category = "Blocks|River", BlueprintReadWrite)
+		TArray<UStaticMesh*> FloatingTrash;
+	UPROPERTY(EditAnywhere, Category = "Blocks|River", BlueprintReadWrite)
+		TArray<UStaticMesh*> Supports;
+
+	UPROPERTY(EditAnywhere, Category = "Blocks|River", BlueprintReadWrite)
+		TArray<UStaticMesh*> Ship;
+
+	
+
 private:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
@@ -117,6 +185,8 @@ private:
 
 	bool Find(Block block, const int lista[], int size);
 	bool RiverRecursive(Direction direction, int X, int Y, int turnsRemaining);
+
+	UStaticMesh* GetMesh(Block block);
 
 protected:
 	// Called when the game starts or when spawned

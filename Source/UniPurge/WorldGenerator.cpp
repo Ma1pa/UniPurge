@@ -78,7 +78,7 @@ std::vector<int> WorldGenerator::GetOptions(int X, int Y)
 int WorldGenerator::CompareGroup(int X, int Y, int group)
 {
 	//The point is not in the tilemap
-	if (X < 0 || Y < 0 || X >= Side || Y >= Side)	return 0;
+	if (X < 0 || Y < 0 || X >= Side || Y >= Side || (TileMap[get_1d(X, Y)].block > Block::ROAD_N_S_E_W && TileMap[get_1d(X, Y)].block < Block::BUILDING))	return 0;
 	//The point is in the tilemap
 	if (TileMap[get_1d(X, Y)].block != Block::BUILDING && TileMap[get_1d(X, Y)].block > Block::EMPTY)	return 1;
 	if (TileMap[get_1d(X, Y)].group == group)	return 2;

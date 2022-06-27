@@ -23,28 +23,25 @@ public:
 		UStaticMeshComponent* StaticMesh;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		TArray<UStaticMesh*> ListOfMeshes;
+		UStaticMesh* MainMesh;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		UStaticMesh* BasicFloor;
+		TArray<UStaticMesh*> Addons_1;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		UStaticMesh* BlockWall;
+		TArray<UStaticMesh*> Addons_2;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		TArray<UStaticMesh*> OpenWall;
+		TArray<UStaticMesh*> Addons_3;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		TArray<UStaticMesh*> DoorWall;
+		TArray<UStaticMesh*> Addons_4;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		UStaticMesh* ConectorWall;
+		TArray<UStaticMesh*> Addons_5;
 
 	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		TArray<UStaticMesh*> FloorMeshes;
-
-	UPROPERTY(EditAnywhere, Category = "Blocks", BlueprintReadWrite)
-		TArray<UStaticMesh*> BlockMeshes;
+		TArray<UStaticMesh*> Addons_6 ;
 
 	bool floored = false;
 
@@ -65,7 +62,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void SetStats(Block block, int height);
+	void SetStats(Block block, int height, UStaticMesh* newMesh, TArray<UStaticMesh*> Elements1, TArray<UStaticMesh*> Elements2, TArray<UStaticMesh*> Elements3, TArray<UStaticMesh*> Elements4, TArray<UStaticMesh*> Elements5, TArray<UStaticMesh*> Elements6);
 
 	void UpdateBuilding();
 
@@ -81,7 +78,7 @@ private:
 	Connections horizontalExits[4]{Connections::NOTHING};
 	Block currentBlock;
 
-	UStaticMesh* GetMesh(Block selected);
+	void GetMesh(Block selected);
 
 	int HeightFromThis;
 

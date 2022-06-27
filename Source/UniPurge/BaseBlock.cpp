@@ -48,15 +48,19 @@ void ABaseBlock::Tick(float DeltaTime)
 
 }
 
-void ABaseBlock::SetStats(Block block, int height)
+void ABaseBlock::SetStats(Block block, int height, UStaticMesh* newMesh, TArray<UStaticMesh*> Elements1, TArray<UStaticMesh*> Elements2, TArray<UStaticMesh*> Elements3, TArray<UStaticMesh*> Elements4, TArray<UStaticMesh*> Elements5, TArray<UStaticMesh*> Elements6)
 {
+	Addons_1 = Elements1;
+	Addons_2 = Elements2;
+	Addons_3 = Elements3;
+	Addons_4 = Elements4;
+	Addons_5 = Elements5;
+	Addons_6 = Elements6;
 	currentBlock = block;
-	if(currentBlock != Block::BUILDING)
-		StaticMesh->SetStaticMesh(GetMesh(currentBlock));
-	else
-	{
-		StaticMesh->SetStaticMesh(BlockMeshes[generator() % BlockMeshes.Num()]);
-	}
+
+	StaticMesh->SetStaticMesh(newMesh);
+	GetMesh(currentBlock);
+
 	HeightFromThis = height;
 	UE_LOG(LogTemp, Warning, TEXT("Height = %d"), height);
 	if (HeightFromThis > 0 && currentBlock == Block::BUILDING)
@@ -70,7 +74,7 @@ void ABaseBlock::SetStats(Block block, int height)
 							horizontalExits[1] == Connections::SAMEGROUP ? 2 : horizontalExits[1] == Connections::DIFFERENTGROUP ? 3 : 0, 
 							horizontalExits[2] == Connections::SAMEGROUP ? 2 : horizontalExits[2] == Connections::DIFFERENTGROUP ? 3 : 0, 
 							horizontalExits[3] == Connections::SAMEGROUP ? 2 : horizontalExits[3] == Connections::DIFFERENTGROUP ? 3 : 0);
-		actor->SetStats(Block::BUILDING, HeightFromThis - 1);
+		actor->SetStats(Block::BUILDING, HeightFromThis - 1, newMesh, Elements1, Elements2, Elements3, Elements4, Elements5, Elements6);
 		actor->UpdateBuilding();
 		blockUp = actor;
 	}
@@ -100,39 +104,107 @@ void ABaseBlock::UpdateAll()
 
 void ABaseBlock::CreateBuildingElement(int side)
 {
+	FRotator Rotation;
 	const FVector Location = GetActorLocation();
-
-	if (side < 4)
+	switch (currentBlock)
 	{
-		FRotator Rotation = FRotator::MakeFromEuler(FVector{0,0,90.0f * side});	// North - East - South - West
-		StaticElements[side]->AddLocalRotation(Rotation);
-		switch (horizontalExits[side])
+	case Block::ROAD_N:
+	case Block::ROAD_S:
+	case Block::ROAD_E:
+	case Block::ROAD_W:
+	case Block::ROAD_N_S:
+	case Block::ROAD_N_E:
+	case Block::ROAD_N_W:
+	case Block::ROAD_S_E:
+	case Block::ROAD_S_W:
+	case Block::ROAD_E_W:
+	case Block::ROAD_N_S_E:
+	case Block::ROAD_N_S_W:
+	case Block::ROAD_N_E_W:
+	case Block::ROAD_S_E_W:
+	case Block::ROAD_N_S_E_W:
+		switch (side)
 		{
-		case Connections::DISCONNECTED:
-			StaticElements[side]->SetStaticMesh(OpenWall[generator() % OpenWall.Num()]);
+		case 0:
+		case 1:
+		case 2:
+		case 3:
 			break;
-		case Connections::EXIT:
-			StaticElements[side]->SetStaticMesh(DoorWall[generator() % DoorWall.Num()]);
-			break;
-		case Connections::SAMEGROUP:
-			StaticElements[side]->SetStaticMesh(ConectorWall);
-			break;
-		case Connections::DIFFERENTGROUP:
-			StaticElements[side]->SetStaticMesh(BlockWall);
+		case 4:
+			StaticElements[side]->SetStaticMesh(Addons_6[generator() % Addons_6.Num()]);
 			break;
 		}
-	}
-	else
-	{
-		FRotator Rotation = GetActorRotation();
-		if (floored)
+		break;
+	case Block::RIVER_N_S:
+	case Block::BRIDGE_N_S:
+	case Block::RIVER_N_E:
+	case Block::RIVER_N_W:
+	case Block::RIVER_S_E:
+	case Block::RIVER_S_W:
+	case Block::RIVER_E_W:
+	case Block::BRIDGE_E_W:
+		switch (side)
 		{
-			StaticElements[side]->SetStaticMesh(BasicFloor);
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+			break;
+		case 4:
+			StaticElements[side]->SetStaticMesh(Addons_6[generator() % Addons_6.Num()]);
+			break;
 		}
-		else
+		break;
+		break;
+	case Block::BUILDING:
+		switch (side)
 		{
-			StaticElements[side]->SetStaticMesh(FloorMeshes[generator() % FloorMeshes.Num()]);
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+			Rotation = FRotator::MakeFromEuler(FVector{ 0,0,90.0f * side });	// North - East - South - West
+			StaticElements[side]->AddLocalRotation(Rotation);
+			switch (horizontalExits[side])
+			{
+			case Connections::DISCONNECTED:
+				StaticElements[side]->SetStaticMesh(Addons_2[generator() % Addons_2.Num()]);
+				break;
+			case Connections::EXIT:
+				StaticElements[side]->SetStaticMesh(Addons_3[generator() % Addons_3.Num()]);
+				break;
+			case Connections::SAMEGROUP:
+				StaticElements[side]->SetStaticMesh(Addons_4[generator() % Addons_4.Num()]);
+				break;
+			case Connections::DIFFERENTGROUP:
+				StaticElements[side]->SetStaticMesh(Addons_1[generator() % Addons_1.Num()]);
+				break;
+			}
+			break;
+		case 4:
+			if (floored)
+				StaticElements[side]->SetStaticMesh(Addons_5[generator() % Addons_5.Num()]);
+			else
+				StaticElements[side]->SetStaticMesh(Addons_6[generator() % Addons_6.Num()]);
+			break;
 		}
+		break;
+	case Block::PARK:
+		switch (side)
+		{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+			break;
+		case 4:
+			StaticElements[side]->SetStaticMesh(Addons_6[generator() % Addons_6.Num()]);
+			break;
+		}
+		break;
+		break;
+	default:
+		break;
 	}
 }
 
@@ -150,115 +222,89 @@ void ABaseBlock::toggleFloor()
 	floored = true;
 }
 
-UStaticMesh* ABaseBlock::GetMesh(Block selected)
+void ABaseBlock::GetMesh(Block selected)
 {
 	StaticMesh->SetRelativeRotation(FQuat::MakeFromEuler(FVector{0,0,0}));
 	switch (selected)
 	{
 	case Block::ROAD_N:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,270 }));
-		return ListOfMeshes[0];
 		break;
 	case Block::ROAD_S:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,90 }));
-		return ListOfMeshes[0];
 		break;
 	case Block::ROAD_E:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
-		return ListOfMeshes[0];
 		break;
 	case Block::ROAD_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,180 }));
-		return ListOfMeshes[0];
 		break;
 	case Block::ROAD_N_S:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,90 }));
-		return ListOfMeshes[1];
 		break;
 	case Block::ROAD_N_E:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
-		return ListOfMeshes[2];
 		break;
 	case Block::ROAD_N_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,270 }));
-		return ListOfMeshes[2];
 		break;
 	case Block::ROAD_S_E:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,90 }));
-		return ListOfMeshes[2];
 		break;
 	case Block::ROAD_S_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,180 }));
-		return ListOfMeshes[2];
 		break;
 	case Block::ROAD_E_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
-		return ListOfMeshes[1];
 		break;
 	case Block::ROAD_N_S_E:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,180 }));
-		return ListOfMeshes[3];
 		break;
 	case Block::ROAD_N_S_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
-		return ListOfMeshes[3];
 		break;
 	case Block::ROAD_N_E_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,90 }));
-		return ListOfMeshes[3];
 		break;
 	case Block::ROAD_S_E_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,270 }));
-		return ListOfMeshes[3];
 		break;
 	case Block::ROAD_N_S_E_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
-		return ListOfMeshes[4];
 		break;
 	case Block::RIVER_N_E:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
-		return ListOfMeshes[8];
 		break;
 	case Block::RIVER_N_S:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,90 }));
-		return ListOfMeshes[7];
 		break;
 	case Block::RIVER_N_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,270 }));
-		return ListOfMeshes[8];
 		break;
 	case Block::RIVER_E_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
-		return ListOfMeshes[7];
 		break;
 	case Block::RIVER_S_E:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,90 }));
-		return ListOfMeshes[8];
 		break;
 	case Block::RIVER_S_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,180 }));
-		return ListOfMeshes[8];
 		break;
 	case Block::BRIDGE_N_S:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,90 }));
-		return ListOfMeshes[9];
 		break;
 	case Block::BRIDGE_E_W:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
-		return ListOfMeshes[9];
 		break;
-
 	case Block::BUILDING:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
-		return ListOfMeshes[5];
 		break;
 	case Block::PARK:
 		StaticMesh->AddLocalRotation(FQuat::MakeFromEuler(FVector{ 0,0,0 }));
-		return ListOfMeshes[6];
 	default:
 		break;
 	}
-	return nullptr;
+	return;
 }
 
 void ABaseBlock::UpdateAdditionsBuilding(int element)
@@ -273,27 +319,27 @@ void ABaseBlock::UpdateAdditionsBuilding(int element)
 		switch (horizontalExits[element])
 		{
 		case Connections::DISCONNECTED:
-			StaticElements[element]->SetStaticMesh(OpenWall[generator() % OpenWall.Num()]);
+			StaticElements[element]->SetStaticMesh(Addons_2[generator() % Addons_2.Num()]);
 			break;
 		case Connections::EXIT:
-			StaticElements[element]->SetStaticMesh(DoorWall[generator() % DoorWall.Num()]);
+			StaticElements[element]->SetStaticMesh(Addons_3[generator() % Addons_3.Num()]);
 			break;
 		case Connections::SAMEGROUP:
-			StaticElements[element]->SetStaticMesh(ConectorWall);
+			StaticElements[element]->SetStaticMesh(Addons_4[generator() % Addons_4.Num()]);
 			break;
 		case Connections::DIFFERENTGROUP:
-			StaticElements[element]->SetStaticMesh(BlockWall);
+			StaticElements[element]->SetStaticMesh(Addons_1[generator() % Addons_1.Num()]);
 			break;
 		}
 		break;
 	case 5:
 		if (floored)
 		{
-			StaticElements[element]->SetStaticMesh(BasicFloor);
+			StaticElements[element]->SetStaticMesh(Addons_5[generator() % Addons_5.Num()]);
 		}
 		else
 		{
-			StaticElements[element]->SetStaticMesh(FloorMeshes[generator() % FloorMeshes.Num()]);
+			StaticElements[element]->SetStaticMesh(Addons_5[generator() % Addons_5.Num()]);
 		}
 		break;
 	}
