@@ -64,6 +64,16 @@ static int AllSouth[8]{ 6,9,10,12,13,15,16,24 };
 static int AllEast[8]{ 7,9,11,12,14,15,16,18 };
 static int AllWest[8]{ 8,10,11,13,14,15,16,18 };
 
+static int AllRoadsNorth[7]{ 6,7,8,12,13,14,16 };
+static int AllRoadsSouth[7]{ 6,9,10,12,13,15,16 };
+static int AllRoadsEast[7]{ 7,9,11,12,14,15,16 };
+static int AllRoadsWest[7]{ 8,10,11,13,14,15,16 };
+
+static int AllRiverNorth[4]{ 17,18,19,20 };
+static int AllRiverSouth[4]{ 17,18,21,22 };
+static int AllRiverEast[4]{ 19,21,23,24 };
+static int AllRiverWest[4]{ 20,22,23,24 };
+
 //Rivers
 static int AllRivers[]{ 17,18,19,20,21,22,23,24 };
 
@@ -77,3 +87,8 @@ public:
 	Enums();
 	~Enums();
 };
+
+inline static bool Find(Block block, const int lista[], int size)
+{
+	return size <= 0 ? false : (std::binary_search(lista, lista + size, (int)block));
+}

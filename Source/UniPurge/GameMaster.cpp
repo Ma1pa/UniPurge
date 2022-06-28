@@ -30,14 +30,6 @@ void AGameMaster::UpdateNPCRadius(int NewRadius)
 	Generator->UpdateNPCR(NewRadius);
 }
 
-bool AGameMaster::Find(Block block, const int lista[], int size)
-{
-	if (size <= 0)      // check that array size is not null or negative
-		return false;
-	// sort(ints, ints + size); // uncomment this line if array wasn't previously sorted
-	return (std::binary_search(lista, lista + size, (int)block));
-}
-
 // Called when the game starts or when spawned
 void AGameMaster::BeginPlay()
 {
@@ -411,17 +403,18 @@ void AGameMaster::GenerarActor(Block ChosenRoad, int XPosition, int YPosition)
 
 	//Is a road
 	if(ChosenRoad <= Block::ROAD_N_S_E_W)
-		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition), GetMesh(ChosenRoad),Trash,Drainage,Mail,Sewer,Lights,TrafficLight);
+		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition), GetMesh(ChosenRoad),Sewer,Trash,Lights,Drainage,Mail,TrafficLight);
 	//Is a river
 	else if (ChosenRoad < Block::BUILDING)
-		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition), GetMesh(ChosenRoad),Drain,FishingPole,Rock,FloatingTrash,Supports,Ship);
+		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition), GetMesh(ChosenRoad),Ship,FloatingTrash,Supports, Drain, FishingPole,Rock);
 	//Is a building
-	if (ChosenRoad == Block::BUILDING)
+	else if (ChosenRoad == Block::BUILDING)
 		Actualizar.push(actor);
 	//Is a park
 	else
-		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition), GetMesh(ChosenRoad), Trees, Picnic, Grass, Chair, Bush, Fence);
-		
+		actor->SetStats(ChosenRoad, Generator->GetHeight(XPosition, YPosition), GetMesh(ChosenRoad), Picnic, Trees, Grass, Chair, Bush, Fence);
+	if(ChosenRoad != Block::BUILDING)
+		actor->UpdateBuilding();
 }
 
 UStaticMesh* AGameMaster::GetMesh(Block block)
@@ -519,7 +512,6 @@ void AGameMaster::ActualizarActor(ABaseBlock* actor, int X, int Y)
 						Generator->CompareGroup(X - 1, Y, group),
 						Generator->CompareGroup(X, Y - 1, group));
 	actor->SetStats(Generator->GetBlock(X, Y), Generator->GetHeight(X, Y), BlockMeshes[generator()%BlockMeshes.Num()], BlockWall,OpenWall,DoorWall, ConectorWall,Floor,FloorMeshes);
-	
 	actor->UpdateBuilding();
 }
 

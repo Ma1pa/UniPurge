@@ -183,7 +183,6 @@ private:
 
 	bool Losing;
 
-	bool Find(Block block, const int lista[], int size);
 	bool RiverRecursive(Direction direction, int X, int Y, int turnsRemaining);
 
 	UStaticMesh* GetMesh(Block block);

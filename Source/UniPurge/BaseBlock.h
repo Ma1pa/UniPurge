@@ -66,7 +66,7 @@ public:
 
 	void UpdateBuilding();
 
-	void CreateBuildingElement(int side);
+	void CreateBuildingElement(int side, bool rotate);
 
 	void SetNewExits(int North, int South, int East, int West);
 
@@ -84,6 +84,10 @@ private:
 
 	ABaseBlock* blockUp;
 
-	void UpdateAdditionsBuilding(int element);
+	void SetSideElement(int side, int choice);
+
+	void SetOneSide(int side, bool sideClosed, bool rotate);
+
+	bool placedCenter;
 
 };

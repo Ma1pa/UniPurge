@@ -11,6 +11,7 @@ ABaseBlock::ABaseBlock()
 	currentBlock = Block::NOTHING;
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MyMesh"));
 	HeightFromThis = 0;
+	placedCenter = false;
 	for (int i = 0; i < 5; i++)
 	{
 		StaticElements.Push(CreateDefaultSubobject<UStaticMeshComponent>(FName(*FString::FromInt(i))));
@@ -50,6 +51,7 @@ void ABaseBlock::Tick(float DeltaTime)
 
 void ABaseBlock::SetStats(Block block, int height, UStaticMesh* newMesh, TArray<UStaticMesh*> Elements1, TArray<UStaticMesh*> Elements2, TArray<UStaticMesh*> Elements3, TArray<UStaticMesh*> Elements4, TArray<UStaticMesh*> Elements5, TArray<UStaticMesh*> Elements6)
 {
+	MainMesh = newMesh;
 	Addons_1 = Elements1;
 	Addons_2 = Elements2;
 	Addons_3 = Elements3;
@@ -75,96 +77,91 @@ void ABaseBlock::SetStats(Block block, int height, UStaticMesh* newMesh, TArray<
 							horizontalExits[2] == Connections::SAMEGROUP ? 2 : horizontalExits[2] == Connections::DIFFERENTGROUP ? 3 : 0, 
 							horizontalExits[3] == Connections::SAMEGROUP ? 2 : horizontalExits[3] == Connections::DIFFERENTGROUP ? 3 : 0);
 		actor->SetStats(Block::BUILDING, HeightFromThis - 1, newMesh, Elements1, Elements2, Elements3, Elements4, Elements5, Elements6);
-		actor->UpdateBuilding();
 		blockUp = actor;
+		actor->UpdateBuilding();
 	}
-	
 }
 
 void ABaseBlock::UpdateBuilding()
 {
+	placedCenter = false;
 	//TODO Make more floortypes for heights
-	CreateBuildingElement(0);	//North
-	CreateBuildingElement(1);	//East
-	CreateBuildingElement(2);	//South
-	CreateBuildingElement(3);	//West
-	CreateBuildingElement(4);	//Up
+	CreateBuildingElement(0, true);	//North
+	CreateBuildingElement(1, true);	//East
+	CreateBuildingElement(2, true);	//South
+	CreateBuildingElement(3, true);	//West
+	CreateBuildingElement(4, true);	//Up
 }
 
 void ABaseBlock::UpdateAll()
 {
-	if (currentBlock == Block::BUILDING)
-	{
-		for (int i = 0; i < StaticElements.Num(); i++)
-			UpdateAdditionsBuilding(i);
-	}
+	for (int i = 0; i < StaticElements.Num(); i++)
+		CreateBuildingElement(i, false);
+
 	if (blockUp != nullptr)
 		blockUp->UpdateAll();
 }
 
-void ABaseBlock::CreateBuildingElement(int side)
+void ABaseBlock::SetOneSide(int side, bool sideClosed, bool rotate)
 {
+	if(rotate)
+		StaticElements[side]->AddRelativeRotation(StaticMesh->GetRelativeRotation().GetInverse());
 	FRotator Rotation;
 	const FVector Location = GetActorLocation();
-	switch (currentBlock)
+	std::discrete_distribution<int> SeleccionItem;
+	switch (side)
 	{
-	case Block::ROAD_N:
-	case Block::ROAD_S:
-	case Block::ROAD_E:
-	case Block::ROAD_W:
-	case Block::ROAD_N_S:
-	case Block::ROAD_N_E:
-	case Block::ROAD_N_W:
-	case Block::ROAD_S_E:
-	case Block::ROAD_S_W:
-	case Block::ROAD_E_W:
-	case Block::ROAD_N_S_E:
-	case Block::ROAD_N_S_W:
-	case Block::ROAD_N_E_W:
-	case Block::ROAD_S_E_W:
-	case Block::ROAD_N_S_E_W:
-		switch (side)
+	case 0:
+		//North
+		Rotation = FRotator::MakeFromEuler(FVector{ 0,0,0 });
+		SeleccionItem.param({ (double)!placedCenter,(double)!sideClosed,(double)!sideClosed,(double)sideClosed,(double)sideClosed,2 });
+		SetSideElement(side, SeleccionItem(generator));
+		break;
+		break;
+	case 1:
+		//East
+	case 2:
+		//South
+	case 3:
+		//West
+		Rotation = FRotator::MakeFromEuler(FVector{ 0,0,90.0f * side });
+		SeleccionItem.param({ 0,(double)!sideClosed,(double)!sideClosed,(double)sideClosed,(double)sideClosed,2 });
+		SetSideElement(side, SeleccionItem(generator));
+		break;
+	case 4:
+		//General
+		Rotation = FRotator::MakeFromEuler(FVector{ 0,0,90.0f * (generator() % 4) });
+		if (sideClosed)
 		{
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-			break;
-		case 4:
 			StaticElements[side]->SetStaticMesh(Addons_6[generator() % Addons_6.Num()]);
-			break;
+		}
+		else
+		{
+			//Set weighted probabilities: Alcantarilla, Basura, Luces, Tapas, Correo, Vacio
+			SeleccionItem.param({ (double)!placedCenter,1,0,0,0,2});
+			SetSideElement(side, SeleccionItem(generator));
 		}
 		break;
-	case Block::RIVER_N_S:
-	case Block::BRIDGE_N_S:
-	case Block::RIVER_N_E:
-	case Block::RIVER_N_W:
-	case Block::RIVER_S_E:
-	case Block::RIVER_S_W:
-	case Block::RIVER_E_W:
-	case Block::BRIDGE_E_W:
+	}
+	if(rotate)
+		StaticElements[side]->AddLocalRotation(Rotation);
+}
+
+void ABaseBlock::CreateBuildingElement(int side, bool rotate)
+{
+	if (currentBlock == Block::BUILDING)
+	{
 		switch (side)
 		{
 		case 0:
 		case 1:
 		case 2:
 		case 3:
-			break;
-		case 4:
-			StaticElements[side]->SetStaticMesh(Addons_6[generator() % Addons_6.Num()]);
-			break;
-		}
-		break;
-		break;
-	case Block::BUILDING:
-		switch (side)
-		{
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-			Rotation = FRotator::MakeFromEuler(FVector{ 0,0,90.0f * side });	// North - East - South - West
-			StaticElements[side]->AddLocalRotation(Rotation);
+			if (rotate)
+			{
+				FRotator Rotation = FRotator::MakeFromEuler(FVector{ 0,0,90.0f * side });	// North - East - South - West
+				StaticElements[side]->AddLocalRotation(Rotation);
+			}
 			switch (horizontalExits[side])
 			{
 			case Connections::DISCONNECTED:
@@ -188,25 +185,110 @@ void ABaseBlock::CreateBuildingElement(int side)
 				StaticElements[side]->SetStaticMesh(Addons_6[generator() % Addons_6.Num()]);
 			break;
 		}
-		break;
-	case Block::PARK:
+		return;
+	}
+	if (currentBlock == Block::PARK)
+	{
 		switch (side)
 		{
 		case 0:
-		case 1:
-		case 2:
-		case 3:
+			SetOneSide(side, generator() % 2, rotate);
 			break;
-		case 4:
-			StaticElements[side]->SetStaticMesh(Addons_6[generator() % Addons_6.Num()]);
+		case 1:
+			SetOneSide(side, generator() % 2, rotate);
+			break;
+		case 2:
+			SetOneSide(side, generator() % 2, rotate);
+			break;
+		case 3:
+			SetOneSide(side, generator() % 2, rotate);
+			break;
+		default:
+			//General option
+			SetOneSide(side, generator() % 2, rotate);
 			break;
 		}
+		return;
+	}
+	int* list;
+	if (currentBlock > Block::ROAD_N_S_E_W) 
+	{
+		switch (side)
+		{
+		case 0:
+			list = AllRiverNorth;
+			SetOneSide(side, !Find(currentBlock, list, 4), rotate);
+			break;
+		case 1:
+			list = AllRiverEast;
+			SetOneSide(side, !Find(currentBlock, list, 4), rotate);
+			break;
+		case 2:
+			list = AllRiverSouth;
+			SetOneSide(side, !Find(currentBlock, list, 4), rotate);
+			break;
+		case 3:
+			list = AllRiverWest;
+			SetOneSide(side, !Find(currentBlock, list, 4), rotate);
+			break;
+		default:
+			//General option
+			SetOneSide(side, generator() % 2, rotate);
+			break;
+		}
+		return;
+	}
+	switch (side)
+	{
+	case 0:
+		list = AllRoadsNorth;
+		SetOneSide(side, !Find(currentBlock, list, 7), rotate);
 		break;
+	case 1:
+		list = AllRoadsEast;
+		SetOneSide(side, !Find(currentBlock, list, 7), rotate);
+		break;
+	case 2:
+		list = AllRoadsSouth;
+		SetOneSide(side, !Find(currentBlock, list, 7), rotate);
+		break;
+	case 3:
+		list = AllRoadsWest;
+		SetOneSide(side, !Find(currentBlock, list, 7), rotate);
+		break;
+	default:
+		//General option
+		SetOneSide(side, ((currentBlock >= Block::ROAD_N_S_E && currentBlock <= Block::ROAD_N_S_E_W) || currentBlock == Block::BRIDGE_E_W || currentBlock == Block::BRIDGE_N_S), rotate);
+		break;
+	}
+}
+
+void ABaseBlock::SetSideElement(int side, int choice)
+{
+	switch (choice)
+	{
+	case 0:
+		placedCenter = true;
+		StaticElements[side]->SetStaticMesh(Addons_1[generator() % Addons_1.Num()]);
+		break;
+	case 1:
+		StaticElements[side]->SetStaticMesh(Addons_2[generator() % Addons_2.Num()]);
+		break;
+	case 2:
+		StaticElements[side]->SetStaticMesh(Addons_3[generator() % Addons_3.Num()]);
+		break;
+	case 3:
+		StaticElements[side]->SetStaticMesh(Addons_4[generator() % Addons_4.Num()]);
+		break;
+	case 4:
+		StaticElements[side]->SetStaticMesh(Addons_5[generator() % Addons_5.Num()]);
 		break;
 	default:
 		break;
 	}
 }
+
+
 
 void ABaseBlock::SetNewExits(int North, int South, int East, int West)
 {
@@ -307,43 +389,7 @@ void ABaseBlock::GetMesh(Block selected)
 	return;
 }
 
-void ABaseBlock::UpdateAdditionsBuilding(int element)
-{
-	switch (element)	//0-4 Horizontal
-	{
-	case 0:
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-		switch (horizontalExits[element])
-		{
-		case Connections::DISCONNECTED:
-			StaticElements[element]->SetStaticMesh(Addons_2[generator() % Addons_2.Num()]);
-			break;
-		case Connections::EXIT:
-			StaticElements[element]->SetStaticMesh(Addons_3[generator() % Addons_3.Num()]);
-			break;
-		case Connections::SAMEGROUP:
-			StaticElements[element]->SetStaticMesh(Addons_4[generator() % Addons_4.Num()]);
-			break;
-		case Connections::DIFFERENTGROUP:
-			StaticElements[element]->SetStaticMesh(Addons_1[generator() % Addons_1.Num()]);
-			break;
-		}
-		break;
-	case 5:
-		if (floored)
-		{
-			StaticElements[element]->SetStaticMesh(Addons_5[generator() % Addons_5.Num()]);
-		}
-		else
-		{
-			StaticElements[element]->SetStaticMesh(Addons_5[generator() % Addons_5.Num()]);
-		}
-		break;
-	}
-}
+
 
 void ABaseBlock::Remove()
 {
