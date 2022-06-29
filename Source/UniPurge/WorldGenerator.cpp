@@ -436,13 +436,13 @@ void WorldGenerator::RemoveConnections(int X, int Y)
 	}
 }
 
-void WorldGenerator::SetRiver(int X, int Y, Block block)
+void WorldGenerator::SetRiver(int X, int Y, Block selectedBlock)
 {
-	TileMap[get_1d(X, Y)].block = block;
-	TileMap[get_1d(X, Y)].posibilities = { (int)block };
+	TileMap[get_1d(X, Y)].block = selectedBlock;
+	TileMap[get_1d(X, Y)].posibilities = { (int)selectedBlock };
 	std::vector<int> options;
 	//Change pos of adjacent tiles
-	switch (block)
+	switch (selectedBlock)
 	{
 	case Block::RIVER_N_S:
 		//Conectar con puentes adyacentes

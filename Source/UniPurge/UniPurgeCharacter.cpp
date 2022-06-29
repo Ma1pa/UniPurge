@@ -127,7 +127,8 @@ void AUniPurgeCharacter::MoveForward(float Value)
 		//if (IsHiding)	ModifiedValue *= HidingModifier;
 
 		AddMovementInput(Direction, ModifiedValue);
-
+		if(IsClimbing)
+			SetActorRotation(FRotator(0, CollisionNormal.Rotation().Yaw + 180, 0));
 	}
 }
 
@@ -156,6 +157,8 @@ void AUniPurgeCharacter::MoveRight(float Value)
 
 		// add movement in that direction
 		AddMovementInput(Direction, ModifiedValue);
+		if(IsClimbing)
+			SetActorRotation(FRotator(0, CollisionNormal.Rotation().Yaw + 180, 0));
 	}
 }
 
@@ -217,7 +220,7 @@ bool AUniPurgeCharacter::CheckWallAtPos(FVector StartingPoint)
 	FRotator Rot = CollisionNormal.Rotation();
 
 	FVector Start = GetActorLocation() + StartingPoint;
-	FVector End = Start + Rot.Vector() * -150;
+	FVector End = Start + Rot.Vector() * -50;
 
 	FCollisionQueryParams TraceParams;
 	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
@@ -235,7 +238,7 @@ bool AUniPurgeCharacter::CheckWallAtAngles(FVector StartingPoint, bool Right)
 	float InitialYaw = Rot.Yaw;
 
 	FVector Start = GetActorLocation() + StartingPoint + Rot.Vector() * -10;
-	FVector End = Start + Rot.Vector() * -60;
+	FVector End = Start + Rot.Vector() * -50;
 	FCollisionQueryParams TraceParams;
 	
 
@@ -246,7 +249,7 @@ bool AUniPurgeCharacter::CheckWallAtAngles(FVector StartingPoint, bool Right)
 			Rot.Yaw = InitialYaw + Yaw;
 		else
 			Rot.Yaw = InitialYaw - Yaw;
-		End = Start + Rot.Vector() * -100;
+		End = Start + Rot.Vector() * -50;
 		DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 2.0f);
 		
 	}
@@ -275,14 +278,15 @@ void AUniPurgeCharacter::OnCollisionEnter(UPrimitiveComponent* HitComp, AActor* 
 		CollisionNormal = ObjectNormal;
 		IsClimbing = true;
 		PrintString(FString::Printf(TEXT("Hit: %s"), *OtherActor->GetName()));
-		SetActorRotation(FQuat::MakeFromEuler(FVector(-CollisionNormal.X, -CollisionNormal.Y, -CollisionNormal.Z)));
+		//SetActorRotation(FQuat::MakeFromEuler(FVector(-CollisionNormal.X, -CollisionNormal.Y, -CollisionNormal.Z)));
+		SetActorRotation(FRotator(0,CollisionNormal.Rotation().Yaw + 180,0));
 
 	}
 	else if(IsClimbing)
 	{
 		StopClimbing();
 	}
-	else if (strstr(TCHAR_TO_ANSI(*OtherActor->GetName()), "WaterBorder"))
+	if (strstr(TCHAR_TO_ANSI(*OtherActor->GetName()), "WaterBorder"))
 	{
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Swimming);
 	}

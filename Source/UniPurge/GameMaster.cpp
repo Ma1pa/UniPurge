@@ -33,12 +33,13 @@ void AGameMaster::UpdateNPCRadius(int NewRadius)
 // Called when the game starts or when spawned
 void AGameMaster::BeginPlay()
 {
+	Super::BeginPlay();
 	UE_LOG(LogTemp, Warning, TEXT("Inicio Juego"));
 	//(Generator)->~WorldGenerator();   //call the destructor explicitly
 	Generator = new WorldGenerator(StaticCast<int>(RadiusOfSpawn), Side, this);
 	Losing = false;
 	
-	Super::BeginPlay();
+	
 	std::default_random_engine newEngine;
 	generator = newEngine;
 	generator.seed(seed);
@@ -175,7 +176,7 @@ void AGameMaster::GenerateRivers()
 
 bool AGameMaster::RiverRecursive(Direction direction, int X, int Y, int turnsRemaining)
 {
-	if (X >= Side || Y < 0 || Y >= Side)	return true;
+	if (X >= Side || Y < 0 || Y >= Side-1)	return true;
 	if (Find(Generator->GetBlock(X, Y), AllRivers, std::size(AllRivers)))	return false;
 	std::discrete_distribution<int> probability({ 1.0*X,0.5*X });
 	std::discrete_distribution<int> bridgeChances({ 1,0.5});

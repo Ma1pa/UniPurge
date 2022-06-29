@@ -114,7 +114,7 @@ void ABaseBlock::SetOneSide(int side, bool sideClosed, bool rotate)
 	case 0:
 		//North
 		Rotation = FRotator::MakeFromEuler(FVector{ 0,0,0 });
-		SeleccionItem.param({ (double)!placedCenter,(double)!sideClosed,(double)!sideClosed,(double)sideClosed,(double)sideClosed,2 });
+		SeleccionItem.param({ (double)!placedCenter,(double)!sideClosed,(double)!sideClosed,(double)sideClosed,(double)sideClosed,3 });
 		SetSideElement(side, SeleccionItem(generator));
 		break;
 		break;
@@ -125,7 +125,7 @@ void ABaseBlock::SetOneSide(int side, bool sideClosed, bool rotate)
 	case 3:
 		//West
 		Rotation = FRotator::MakeFromEuler(FVector{ 0,0,90.0f * side });
-		SeleccionItem.param({ 0,(double)!sideClosed,(double)!sideClosed,(double)sideClosed,(double)sideClosed,2 });
+		SeleccionItem.param({ 0,(double)!sideClosed,(double)!sideClosed,(double)sideClosed,(double)sideClosed,3 });
 		SetSideElement(side, SeleccionItem(generator));
 		break;
 	case 4:
@@ -138,7 +138,7 @@ void ABaseBlock::SetOneSide(int side, bool sideClosed, bool rotate)
 		else
 		{
 			//Set weighted probabilities: Alcantarilla, Basura, Luces, Tapas, Correo, Vacio
-			SeleccionItem.param({ (double)!placedCenter,1,0,0,0,2});
+			SeleccionItem.param({ (double)!placedCenter,1,0,0,0,3});
 			SetSideElement(side, SeleccionItem(generator));
 		}
 		break;
