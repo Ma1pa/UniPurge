@@ -30,12 +30,14 @@ void ATrap::NextTrap()
 		{
 			StaticMesh->SetStaticMesh(ListOfMeshes[siguienteMesh]);
 			SetActorRelativeScale3D({ -ListOfScale[siguienteMesh], ListOfScale[siguienteMesh], ListOfScale[siguienteMesh] });
+			MaxTime = ListOfDuration[siguienteMesh];
 			currentNumber = siguienteMesh;
 		}
 		else
 		{
 			StaticMesh->SetStaticMesh(ListOfMeshes[0]);
 			SetActorRelativeScale3D({ -ListOfScale[0], ListOfScale[0], ListOfScale[0] });
+			MaxTime = ListOfDuration[0];
 			currentNumber = 0;
 		}
 		

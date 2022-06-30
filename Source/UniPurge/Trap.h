@@ -17,6 +17,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Models", BlueprintReadOnly)
 	UStaticMeshComponent* StaticMesh;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Models")
+		int currentNumber;
+
 	UPROPERTY(EditAnywhere, Category = "Models", BlueprintReadWrite)
 	TArray<UStaticMesh*> ListOfMeshes;
 
@@ -25,6 +28,8 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Models", BlueprintReadWrite)
 		TArray<float> ListOfScale;
+	UPROPERTY(EditAnywhere, Category = "Models", BlueprintReadWrite)
+		TArray<float> ListOfDuration;
 
 	void PlaceTrap();
 
@@ -45,7 +50,6 @@ protected:
 	virtual void BeginPlay() override;
 	UFUNCTION(BlueprintCallable)
 	void LoadModel();
-	int currentNumber;
 	
 	
 
@@ -55,6 +59,9 @@ public:
 
 	bool isShift;
 
-	FORCEINLINE void SetShift(bool onOrOff) { isShift = onOrOff; }
+	FORCEINLINE void SetShift(bool onOrOff) { isShift = onOrOff; SettingShift(onOrOff); }
+
+	UFUNCTION(BlueprintImplementableEvent)
+		void SettingShift(bool onOrOff);
 
 };
