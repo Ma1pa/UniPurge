@@ -29,6 +29,8 @@ class AUniPurgeCharacter : public ACharacter
 public:
 	AUniPurgeCharacter();
 
+	virtual void Tick(float DeltaTime) override;
+
 	UPROPERTY(EditAnywhere, Category = Trap)
 	TSubclassOf<AActor> SelectedTrap;
 
@@ -88,7 +90,7 @@ public:
 private:
 	
 	bool isShifting;
-	
+	EMovementMode previousMovement;
 	
 	FVector HeadArea;
 	FVector FeetArea;

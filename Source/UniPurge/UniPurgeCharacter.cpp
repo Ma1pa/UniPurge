@@ -66,8 +66,17 @@ AUniPurgeCharacter::AUniPurgeCharacter()
 	selectedTrap = nullptr;
 }
 
+void AUniPurgeCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	if (GetCharacterMovement()->MovementMode == MOVE_Falling && previousMovement == MOVE_Swimming)
+		GetCharacterMovement()->SetMovementMode(MOVE_Swimming);
+
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Input
+
 
 void AUniPurgeCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -197,11 +206,11 @@ FVector AUniPurgeCharacter::WallMovement(FVector DirectionOfMovement, bool Right
 	//Check if theres a wall at head height
 	if (!CheckWallAtPos(HeadArea))
 	{
-		PrintString("Parte de arriba descolgada.");
+		//PrintString("Parte de arriba descolgada.");
 		//Check if there is a wall at feet height
 		if (!CheckWallAtPos(FeetArea))
 		{
-			PrintString("Cuerpo flotando");
+			//PrintString("Cuerpo flotando");
 			//TODO Turn on the outside of the wall
 			//We check all degrees until something is found 
 
@@ -223,7 +232,7 @@ bool AUniPurgeCharacter::CheckWallAtPos(FVector StartingPoint)
 	FVector End = Start + Rot.Vector() * -50;
 
 	FCollisionQueryParams TraceParams;
-	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
+	//DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
 	return GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, TraceParams);
 	return false;
 }
@@ -250,7 +259,7 @@ bool AUniPurgeCharacter::CheckWallAtAngles(FVector StartingPoint, bool Right)
 		else
 			Rot.Yaw = InitialYaw - Yaw;
 		End = Start + Rot.Vector() * -50;
-		DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 2.0f);
+		//DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 2.0f);
 		
 	}
 	if (Yaw > -90)
@@ -271,13 +280,13 @@ FVector AUniPurgeCharacter::VaultOverWall()
 void AUniPurgeCharacter::OnCollisionEnter(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector ObjectNormal, const FHitResult& Hit)
 {
 	EndGame(OtherActor);
-
+	previousMovement = GetCharacterMovement()->MovementMode;
 	if( GetCharacterMovement()->MovementMode != MOVE_Walking && ( abs(ObjectNormal.X) > abs(ObjectNormal.Z) || abs(ObjectNormal.Y) > abs(ObjectNormal.Z)) &&  !strstr(TCHAR_TO_ANSI(*OtherActor->GetName()), "WorldWall"))
 	{
 		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Flying);
 		CollisionNormal = ObjectNormal;
 		IsClimbing = true;
-		PrintString(FString::Printf(TEXT("Hit: %s"), *OtherActor->GetName()));
+		//PrintString(FString::Printf(TEXT("Hit: %s"), *OtherActor->GetName()));
 		//SetActorRotation(FQuat::MakeFromEuler(FVector(-CollisionNormal.X, -CollisionNormal.Y, -CollisionNormal.Z)));
 		SetActorRotation(FRotator(0,CollisionNormal.Rotation().Yaw + 180,0));
 
@@ -326,7 +335,7 @@ void AUniPurgeCharacter::InShift(float deltaTime)
 		FVector End = Start + Rot.Vector() * 10000;
 
 		FCollisionQueryParams TraceParams;
-		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
+		//DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f);
 		if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, TraceParams))
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Choco"));
@@ -338,7 +347,7 @@ void AUniPurgeCharacter::InShift(float deltaTime)
 			}
 			else if(Hit.Actor != selectedTrap)
 			{
-				selectedTrap->SetActorLocation(GetActorLocation());
+				selectedTrap->SetActorLocation(Start-(Rot.Vector()*300));
 				FRotator rotator = GetViewRotation();
 				rotator.Pitch = 0;
 				rotator.Roll = 0;
@@ -367,7 +376,7 @@ void AUniPurgeCharacter::TrapToFloor()
 	FVector End = Start + Rot.Vector() * 10000;
 
 	FCollisionQueryParams TraceParams;
-	DrawDebugLine(GetWorld(), Start, End, FColor::Yellow, false, 2.0f);
+	//DrawDebugLine(GetWorld(), Start, End, FColor::Yellow, false, 2.0f);
 	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, TraceParams))
 	{
 		selectedTrap->SetActorLocation(Hit.Location, true);
